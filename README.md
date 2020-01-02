@@ -1,1 +1,1 @@
-# snt
+# snt project
