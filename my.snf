@@ -1,0 +1,5 @@
+[client]
+database = snt_db
+user = django_admin
+password = xj8$-2t9
+default-character-set = utf8
