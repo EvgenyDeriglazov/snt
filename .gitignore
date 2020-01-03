@@ -133,3 +133,6 @@ dmypy.json
 
 # Database
 *.sqlite3
+
+# Swap files (opened files which are being edited at the moment)
+*.swp
