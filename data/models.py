@@ -3,11 +3,22 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 # Data validators
-def validate_account(value):
-    valid_symbols = list(range(0, 11))
-    if value not in valid_symbols:
+def validate_account_number(value):
+    """Makes account number validation."""
+    char_set = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
+    wrong_char_list = []
+    for char in value:
+        if char not in char_set and char not in wrong_char_list:
+            wrong_char_list.append(char)
+    if len(value) < 20:
         raise ValidationError(
-            _('%(value)s is not a number'),
+            _('Неверный номер счета (меньше 20-и знаков).')
+        )
+    elif wrong_char_list:
+        wrong_string = ", ".join(wrong_char_list) 
+        raise ValidationError(
+            _('Некорректный символ в номере счета - (' + wrong_string + ')'),
+            params={'value': value},
         )
 
 # Create your models here.
@@ -15,20 +26,41 @@ class Snt(models.Model):
     """Model representing a SNT with basic information such as
     SNT name, chairman, payment details, address."""
     name = models.CharField(
-        "Название СНТ",
+        "Наименование СНТ",
         max_length=200,
         help_text="Введите полное название вашего СНТ",
     )
     personal_acc = models.CharField(
+        "Номер расчетного счета",
         max_length=20,
-        validators=[validate_account],
-        help_text="Введите номер расчетного счета",
+        help_text="Введите номер расчетного счета (20-и значное число)",
+        validators=[validate_account_number],
     )
-    bank_name = models.CharField(max_length=45)
-    bic = models.CharField(max_length=9)
-    corresp_acc = models.CharField(max_length=20)
-    payee_inn = models.CharField(max_length=10)
-    kpp = models.CharField(max_length=9)
+    bank_name = models.CharField(
+        "Наименование банка получателя",
+        max_length=45,
+        help_text="Введите наименование банка получателя",
+    )
+    bic = models.CharField(
+        "БИК",
+        max_length=9,
+        help_text="Введите БИК",
+    )
+    corresp_acc = models.CharField(
+        "Номер кор./счета",
+        max_length=20,
+        help_text="Введите номер кор./счета",
+    )
+    inn = models.CharField(
+        "ИНН",
+        max_length=10,
+        help_text="Введите номер ИНН",
+    )
+    kpp = models.CharField(
+        "КПП",
+        max_length=9,
+        help_text="Введите номер КПП",
+    )
 
     class Meta:
         verbose_name_plural = "СНТ"
