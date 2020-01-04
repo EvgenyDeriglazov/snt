@@ -3,22 +3,38 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 # Data validators
-def validate_account_number(value):
-    """Makes account number validation."""
+def validate_chars(value):
+    """Makes allowed chars validation."""
     char_set = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
     wrong_char_list = []
     for char in value:
         if char not in char_set and char not in wrong_char_list:
             wrong_char_list.append(char)
+    if wrong_char_list:
+        wrong_string = ", ".join(wrong_char_list)
+        raise ValidationError(
+            _('Некорректный символ в номере счета - (' + wrong_string + ')')
+        )
+
+def validate_20_length(value):
+    """Makes 20 length number validation."""
     if len(value) < 20:
         raise ValidationError(
-            _('Неверный номер счета (меньше 20-и знаков).')
+            _('Неверный номер (меньше 20-и знаков)')
         )
-    elif wrong_char_list:
-        wrong_string = ", ".join(wrong_char_list) 
+
+def validate_10_length(value):
+    """Makes 10 length number validation."""
+    if len(value) < 10:
         raise ValidationError(
-            _('Некорректный символ в номере счета - (' + wrong_string + ')'),
-            params={'value': value},
+            _('Неверный номер (меньше 10-и знаков)')
+        )
+
+def validate_9_length(value):
+    """Makes 9 length numbers validation."""
+    if len(value) < 9:
+        raise ValidationError(
+            _('Неверный номер (меньше 9-и знаков)')
         )
 
 # Create your models here.
@@ -34,7 +50,7 @@ class Snt(models.Model):
         "Номер расчетного счета",
         max_length=20,
         help_text="Введите номер расчетного счета (20-и значное число)",
-        validators=[validate_account_number],
+        validators=[validate_chars, validate_20_length],
     )
     bank_name = models.CharField(
         "Наименование банка получателя",
@@ -44,22 +60,26 @@ class Snt(models.Model):
     bic = models.CharField(
         "БИК",
         max_length=9,
-        help_text="Введите БИК",
+        help_text="Введите БИК (9-и значное число)",
+        validators=[validate_chars, validate_9_length],
     )
     corresp_acc = models.CharField(
         "Номер кор./счета",
         max_length=20,
-        help_text="Введите номер кор./счета",
+        help_text="Введите номер кор./счета (20-и значное число)",
+        validators=[validate_chars, validate_20_length],
     )
     inn = models.CharField(
         "ИНН",
         max_length=10,
-        help_text="Введите номер ИНН",
+        help_text="Введите ИНН (10-и значное число)",
+        validators=[validate_chars, validate_10_length],
     )
     kpp = models.CharField(
         "КПП",
         max_length=9,
-        help_text="Введите номер КПП",
+        help_text="Введите КПП (9-и значное число)",
+        validators=[validate_chars, validate_9_length],
     )
 
     class Meta:
@@ -68,6 +88,7 @@ class Snt(models.Model):
     def __str__(self):
         """String for representing the Model object."""
         return self.name
+
     def get_absolute_url(self):
         """Returns the url to access a detail record for this snt."""
         return reverse('snt-detail', args=[str(self.id)])
@@ -83,7 +104,33 @@ class ChairMan(models.Model):
     """Model representing a chairman of snt with basic information
     such as first name, last name, status (current or former)
     hire date, retire date, snt (one-to-one)."""
-    pass
+    first_name = models.CharField(
+        "Имя",
+        max_length=200,
+        help_text="Введите имя",
+    )
+    middle_name = models.CharField(
+        "Отчество",
+        max_length=200,
+        help_text="Введите отчество",
+    )
+    last_name = models.CharField(
+        "Фамилия",
+        max_length=200,
+        help_text="Введите фамилию",
+    )
+
+    class Meta:
+        verbose_name = "председатель"
+        verbose_name_plural = "председатели"
+
+    def __str__(self):
+        """String for representing the Model object."""
+        return self.last_name + ' ' + self.first_name + ' ' + self.middle_name
+
+    def get_absolute_url(self):
+        """Returns the url to access a detail record for this chairman."""
+        return reverse('chairman-detail', args=[str(self.id)])
 
 class Owner(models.Model):
     """Model representing an owner of land plot with basic infromation
