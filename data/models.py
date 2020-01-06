@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+from django.contrib.auth import get_user_model
 
 # Data validators
 def validate_number(value):
@@ -43,6 +44,11 @@ def validate_human_names(value):
             raise ValidationError(
                 _('Можно использовать только русские символы')
             ) 
+
+# other functions
+def get_default_user():
+    """Creates default user for chair_man field in snt model."""
+    return get_user_model().objects.get_or_create(username='deleted')[0]
 # Create your models here.
 class Snt(models.Model):
     """Model representing a SNT with basic information such as
@@ -87,16 +93,24 @@ class Snt(models.Model):
         help_text="Введите КПП (9-и значное число)",
         validators=[validate_number, validate_9_length],
     )
+    chair_man = models.OneToOneField(
+        'ChairMan',
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='председатель',
+        help_text="Председатель садоводства",
+    )
+
 
     class Meta:
         verbose_name_plural = "СНТ"
 
     def __str__(self):
         """String for representing the Model object."""
-        return self.name
-
-    def get_absolute_url(self):
-        """Returns the url to access a detail record for this snt."""
+        return self.name 
+    
+    def get_absolute_url(self): 
+        """Returns the url to access a detail record for this snt.""" 
         return reverse('snt-detail', args=[str(self.id)])
  
 
