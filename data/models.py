@@ -3,12 +3,11 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 # Data validators
-def validate_chars(value):
-    """Makes allowed chars validation."""
-    char_set = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
+def validate_number(value):
+    """Makes number validation (use only numbers)."""
     wrong_char_list = []
     for char in value:
-        if char not in char_set and char not in wrong_char_list:
+        if ord(char) > 57 or ord(char) < 48:
             wrong_char_list.append(char)
     if wrong_char_list:
         wrong_string = ", ".join(wrong_char_list)
@@ -37,6 +36,13 @@ def validate_9_length(value):
             _('Неверный номер (меньше 9-и знаков)')
         )
 
+def validate_human_names(value):
+    """Makes name validation (use only Russian letters)."""
+    for char in value:
+        if ord(char) < 1040 or ord(char) > 1103:
+            raise ValidationError(
+                _('Можно использовать только русские символы')
+            ) 
 # Create your models here.
 class Snt(models.Model):
     """Model representing a SNT with basic information such as
@@ -50,7 +56,7 @@ class Snt(models.Model):
         "Номер расчетного счета",
         max_length=20,
         help_text="Введите номер расчетного счета (20-и значное число)",
-        validators=[validate_chars, validate_20_length],
+        validators=[validate_number, validate_20_length],
     )
     bank_name = models.CharField(
         "Наименование банка получателя",
@@ -61,25 +67,25 @@ class Snt(models.Model):
         "БИК",
         max_length=9,
         help_text="Введите БИК (9-и значное число)",
-        validators=[validate_chars, validate_9_length],
+        validators=[validate_number, validate_9_length],
     )
     corresp_acc = models.CharField(
         "Номер кор./счета",
         max_length=20,
         help_text="Введите номер кор./счета (20-и значное число)",
-        validators=[validate_chars, validate_20_length],
+        validators=[validate_number, validate_20_length],
     )
     inn = models.CharField(
         "ИНН",
         max_length=10,
         help_text="Введите ИНН (10-и значное число)",
-        validators=[validate_chars, validate_10_length],
+        validators=[validate_number, validate_10_length],
     )
     kpp = models.CharField(
         "КПП",
         max_length=9,
         help_text="Введите КПП (9-и значное число)",
-        validators=[validate_chars, validate_9_length],
+        validators=[validate_number, validate_9_length],
     )
 
     class Meta:
@@ -108,16 +114,19 @@ class ChairMan(models.Model):
         "Имя",
         max_length=200,
         help_text="Введите имя",
+        validators = [validate_human_names],
     )
     middle_name = models.CharField(
         "Отчество",
         max_length=200,
         help_text="Введите отчество",
+        validators = [validate_human_names],
     )
     last_name = models.CharField(
         "Фамилия",
         max_length=200,
         help_text="Введите фамилию",
+        validators = [validate_human_names],
     )
 
     class Meta:
