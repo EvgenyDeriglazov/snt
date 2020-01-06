@@ -45,10 +45,6 @@ def validate_human_names(value):
                 _('Можно использовать только русские символы')
             ) 
 
-# other functions
-def get_default_user():
-    """Creates default user for chair_man field in snt model."""
-    return get_user_model().objects.get_or_create(username='deleted')[0]
 # Create your models here.
 class Snt(models.Model):
     """Model representing a SNT with basic information such as
@@ -56,41 +52,41 @@ class Snt(models.Model):
     name = models.CharField(
         "Наименование СНТ",
         max_length=200,
-        help_text="Введите полное название вашего СНТ",
+        help_text="Полное название СНТ",
     )
     personal_acc = models.CharField(
         "Номер расчетного счета",
         max_length=20,
-        help_text="Введите номер расчетного счета (20-и значное число)",
+        help_text="Номер расчетного счета (20-и значное число)",
         validators=[validate_number, validate_20_length],
     )
     bank_name = models.CharField(
         "Наименование банка получателя",
         max_length=45,
-        help_text="Введите наименование банка получателя",
+        help_text="Наименование банка получателя",
     )
     bic = models.CharField(
         "БИК",
         max_length=9,
-        help_text="Введите БИК (9-и значное число)",
+        help_text="БИК (9-и значное число)",
         validators=[validate_number, validate_9_length],
     )
     corresp_acc = models.CharField(
         "Номер кор./счета",
         max_length=20,
-        help_text="Введите номер кор./счета (20-и значное число)",
+        help_text="Номер кор./счета (20-и значное число)",
         validators=[validate_number, validate_20_length],
     )
     inn = models.CharField(
         "ИНН",
         max_length=10,
-        help_text="Введите ИНН (10-и значное число)",
+        help_text="ИНН (10-и значное число)",
         validators=[validate_number, validate_10_length],
     )
     kpp = models.CharField(
         "КПП",
         max_length=9,
-        help_text="Введите КПП (9-и значное число)",
+        help_text="КПП (9-и значное число)",
         validators=[validate_number, validate_9_length],
     )
     chair_man = models.OneToOneField(
@@ -103,6 +99,7 @@ class Snt(models.Model):
 
 
     class Meta:
+        verbose_name = "СНТ"
         verbose_name_plural = "СНТ"
 
     def __str__(self):
@@ -116,9 +113,54 @@ class Snt(models.Model):
 
 class LandPlot(models.Model):
     """Model representing a land plot with basic information
-    such as plot number (pk), area, owners (many-to-many), 
+    such as plot number (unique), area, owners (many-to-many), 
     snt (fk), electric meter (one-to-one)."""
-    pass
+    plot_number = models.CharField(
+        "Номер участка",
+        max_length=10,
+        help_text="Номер участка",
+        unique=True,
+    )
+    plot_area = models.DecimalField(
+        "Площадь участка",
+        max_digits=7,
+        decimal_places=2,
+        help_text="Площадь участка (кв.м)",
+    )
+    snt = models.ForeignKey(
+       Snt,
+       on_delete=models.SET_NULL,
+       null=True,
+       verbose_name="СНТ",
+       help_text="Расположен в СНТ",
+    ) 
+    owner = models.ForeignKey(
+        'Owner',
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name="владелец участка",
+        help_text="Владелец участка",
+    )   
+    electric_meter = models.OneToOneField(
+        'ElectricMeter',
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='Счетчик',
+        help_text="Прибор учета электроэнергии",
+    )
+
+    class Meta:
+        verbose_name = "участок"
+        verbose_name_plural = "участки"
+
+
+    def __str__(self):
+        """String for representing the Model object."""
+        return self.plot_number
+
+    def get_absolute_url(self):
+        """Returns the url to access a detail record for land plot."""
+        return reverse('land-plot-detail', args=[str(self.id)])
 
 class ChairMan(models.Model):
     """Model representing a chairman of snt with basic information
@@ -126,19 +168,19 @@ class ChairMan(models.Model):
     hire date, retire date, snt (one-to-one)."""
     first_name = models.CharField(
         "Имя",
-        max_length=200,
+        max_length=50,
         help_text="Введите имя",
         validators = [validate_human_names],
     )
     middle_name = models.CharField(
         "Отчество",
-        max_length=200,
+        max_length=50,
         help_text="Введите отчество",
         validators = [validate_human_names],
     )
     last_name = models.CharField(
         "Фамилия",
-        max_length=200,
+        max_length=50,
         help_text="Введите фамилию",
         validators = [validate_human_names],
     )
@@ -159,19 +201,129 @@ class Owner(models.Model):
     """Model representing an owner of land plot with basic infromation
     such as first name, last name, status (current or former), 
     land plot (many-to-many), start owner date, end owner date."""
-    pass
+    first_name = models.CharField(
+        "Имя",
+        max_length=50,
+        help_text="Введите имя",
+        validators = [validate_human_names],
+    )
+    middle_name = models.CharField(
+        "Отчество",
+        max_length=50,
+        help_text="Введите отчество",
+        validators = [validate_human_names],
+    )
+    last_name = models.CharField(
+        "Фамилия",
+        max_length=50,
+        help_text="Введите фамилию",
+        validators = [validate_human_names],
+    )
+
+    OWNER_STATUS = [
+        ('c', 'Настоящий'),
+        ('p', 'Прежний'),
+    ]
+
+    status = models.CharField(
+        "Статус владельца",
+        max_length=1,
+        choices=OWNER_STATUS,
+        default='c',
+        help_text="Статус владельца",
+    )
+    
+    start_owner_date = models.DateField(
+        verbose_name="дата начала владения",
+    )
+    end_owner_date = models.DateField(
+        verbose_name="дата окончания владения",
+        blank=True,
+        null=True,
+    )
+    
+    class Meta:
+        verbose_name = "владелец"
+        verbose_name_plural = "владельцы"
+
+    def __str__(self):
+        """String for representing the Model object."""
+        return self.last_name + ' ' + self.first_name + ' ' + self.middle_name
+
+    def get_absolute_url(self):
+        """Returns the url to access a detail record for this chairman."""
+        return reverse('owner-detail', args=[str(self.id)])
+
 
 class ElectricMeter(models.Model):
     """Model representing an electric meter with basic information
     such as serial number, type (1T/2T), land plot (one-to-one)."""
-    pass
+    model = models.CharField(
+        "Модель",
+        max_length=50,
+        help_text="Модель прибора учета электроэнергии",
+    )
+    serial_number = models.CharField(
+        "Серийный номер",
+        max_length=50,
+        help_text="Серийный номер прибора учета электроэнергии",
+    )
 
+    MODEL_TYPE = [
+        ('T1', 'Однотарифный'),
+        ('T2', 'Двухтарифный'),
+    ]
+
+    model_type = models.CharField(
+        "Тип",
+        max_length=2,
+        choices=MODEL_TYPE,
+        default='T1',
+        help_text="Тип прибора учета",
+    )
+    acceptance_date = models.DateField(
+        verbose_name="дата установки",
+        blank=True,
+        null=True,
+    )
+
+    class Meta:
+        verbose_name = "прибор учета электроэнергии"
+        verbose_name_plural = "приборы учета электроэнергии"
+
+    def __str__(self):
+        """String for representing the Model object."""
+        return self.model
+
+    def get_absolute_url(self):
+        """Returns the url to access a detail record for this chairman."""
+        return reverse('electric-meter-detail', args=[str(self.id)])
 class ElectricMeterReadings(models.Model):
     """Model representing electic meter readings to keep records and
     calculate payment for each land plot."""
-    pass
+    plot_number = models.ForeignKey(
+        LandPlot,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name="Номер участка",
+        help_text="Номер участка",
+    )
+    record_date = models.DateField(
+        verbose_name="Дата",
+        help_text="Дата снятия показаний счетчика",
+    )
+    t1_record = models.PositiveIntegerField(
+        "Тариф день",
+        help_text="Покзания T1",
+    )
+    t2_record = models.PositiveIntegerField(
+        "Тариф ночь",
+        help_text="Показания Т2",
+    )
 
-class Tarrifs(models.Model):
-    """Model representing different snt tarrifs to calculate 
-    payments."""
-    pass
+
+
+#class Tarrifs(models.Model):
+#    """Model representing different snt tarrifs to calculate 
+#    payments."""
+#    pass
