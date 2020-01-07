@@ -122,10 +122,10 @@ class LandPlot(models.Model):
         unique=True,
     )
     plot_area = models.DecimalField(
-        "Площадь участка",
+        "Размер участка",
         max_digits=7,
         decimal_places=2,
-        help_text="Площадь участка (кв.м)",
+        help_text="Единица измерения кв.м",
     )
     snt = models.ForeignKey(
        Snt,
@@ -146,7 +146,7 @@ class LandPlot(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         verbose_name='Счетчик',
-        help_text="Прибор учета электроэнергии",
+        help_text="Данные прибора учета электроэнергии",
     )
 
     class Meta:
@@ -307,23 +307,83 @@ class ElectricMeterReadings(models.Model):
         null=True,
         verbose_name="Номер участка",
         help_text="Номер участка",
+        unique_for_date="record_date",
     )
     record_date = models.DateField(
+        auto_now_add=True,
         verbose_name="Дата",
         help_text="Дата снятия показаний счетчика",
     )
     t1_record = models.PositiveIntegerField(
         "Тариф день",
-        help_text="Покзания T1",
+        help_text="Показания T1 (6:00-23:00)",
     )
     t2_record = models.PositiveIntegerField(
         "Тариф ночь",
-        help_text="Показания Т2",
+        help_text="Показания Т2 (23:00-6:00)",
+    )
+    
+    RECORD_STATUS = [
+        ('new-pay-calc', 'Новые показания'),
+        ('new-pay-bank', 'Оплачено через банк'),
+        ('new-pay-conf', 'Последняя оплата'),
+        ('old-pay-conf', 'Оплачено ранее'),
+    ] 
+
+    record_status = models.CharField(
+        "Статус",
+        max_length=12,
+        choices=RECORD_STATUS,
+        default='new-pay-calc',
+        help_text="Статус показаний",
     )
 
+    class Meta:
+        verbose_name = "данные показаний счетчика"
+        verbose_name_plural = "показания счетчика"
+        unique_together = ['record_date', 'plot_number']
+
+    def __str__(self):
+        """String for representing the Model object."""
+        return self.plot_number.plot_number + ' ' + str(self.record_date)
 
 
-#class Tarrifs(models.Model):
-#    """Model representing different snt tarrifs to calculate 
-#    payments."""
-#    pass
+    def get_absolute_url(self):
+        """Returns the url to access a detail record for this chairman."""
+        return reverse('electric-meter-reading-detail', args=[str(self.id)])
+
+
+
+
+class Rate(models.Model):
+    """Model representing snt rates to calculate 
+    payments."""
+    intro_date = models.DateField(
+        verbose_name="Дата",
+        help_text="Дата введения/изменения тарифа",
+    )
+    t1_rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        verbose_name="Электроэнергия день",
+        help_text="Тариф Т1 (6:00-23:00)",
+    )
+    t2_rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        verbose_name="Электроэнергия ночь",
+        help_text="Тариф Т2 (23:00-6:00)",
+    )
+
+    class Meta:
+        verbose_name = "Тариф"
+        verbose_name_plural = "Тарифы"
+        unique_together = ['intro_date', 't1_rate', 't2_rate']
+
+    def __str__(self):
+        """String for representing the Model object."""
+        return self.intro_date
+
+    def get_absolute_url(self):
+        """Returns the url to access a detail record for this chairman."""
+        return reverse('rates-detail', args=[str(self.id)])
