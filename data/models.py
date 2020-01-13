@@ -121,10 +121,8 @@ class LandPlot(models.Model):
         help_text="Номер участка",
         unique=True,
     )
-    plot_area = models.DecimalField(
+    plot_area = models.FloatField(
         "Размер участка",
-        max_digits=7,
-        decimal_places=2,
         help_text="Единица измерения кв.м",
     )
     snt = models.ForeignKey(
@@ -314,29 +312,60 @@ class ElectricMeterReadings(models.Model):
         verbose_name="Дата",
         help_text="Дата снятия показаний счетчика",
     )
-    t1_record = models.PositiveIntegerField(
-        "Тариф день",
-        help_text="Показания T1 (6:00-23:00)",
+    t1_new = models.PositiveIntegerField(
+        "Текущее показание (день)",
+        help_text="Тариф T1 (6:00-23:00)",
     )
-    t2_record = models.PositiveIntegerField(
-        "Тариф ночь",
-        help_text="Показания Т2 (23:00-6:00)",
+    t2_new = models.PositiveIntegerField(
+        "Текущее показание (ночь)",
+        help_text="Тариф Т2 (23:00-6:00)",
     )
+    t1_prev = models.PositiveIntegerField(
+        "Предыдущее показание (день)",
+        help_text="Тариф Т1 (6:00-23:00)",
+    )
+    t2_prev = models.PositiveIntegerField(
+        "Предыдущее показание (ночь)",
+        help_text="Тариф Т2 (23:00-6:00)",
+    )
+    t1_cons = models.PositiveIntegerField(
+        "Потрачено квт/ч (день)",
+    )
+    t2_cons = models.PositiveIntegerField(
+        "Потрачено квт/ч (ночь)",
+    )
+
     
     RECORD_STATUS = [
-        ('new-pay-calc', 'Новые показания'),
-        ('new-pay-bank', 'Оплачено через банк'),
-        ('new-pay-conf', 'Последняя оплата'),
-        ('old-pay-conf', 'Оплачено ранее'),
+        ('n', 'Новые показания'),
+        ('p', 'Оплачено через банк'),
+        ('c', 'Последняя оплата'),
+        ('o', 'Оплачено ранее'),
     ] 
 
     record_status = models.CharField(
         "Статус",
-        max_length=12,
+        max_length=1,
         choices=RECORD_STATUS,
-        default='new-pay-calc',
+        default='n',
         help_text="Статус показаний",
     )
+    pay_date = models.DateField(
+        verbose_name = "Дата оплаты",
+    )
+    t1_amount = models.FloatField(
+        "Сумма (день)",
+        help_text="Сумма по тарифу Т1",
+    )
+    t2_amount = models.FloatField(
+        "Сумма (ночь)",
+        help_text="Сумма по тарифу Т2",
+    )
+    sum_tot = models.FloatField(
+        "Итог",
+        help_text="Общая сумма к оплате",
+    )
+
 
     class Meta:
         verbose_name = "данные показаний счетчика"
@@ -362,15 +391,11 @@ class Rate(models.Model):
         verbose_name="Дата",
         help_text="Дата введения/изменения тарифа",
     )
-    t1_rate = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
+    t1_rate = models.FloatField(
         verbose_name="Электроэнергия день",
         help_text="Тариф Т1 (6:00-23:00)",
     )
-    t2_rate = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
+    t2_rate = models.FloatField(
         verbose_name="Электроэнергия ночь",
         help_text="Тариф Т2 (23:00-6:00)",
     )
