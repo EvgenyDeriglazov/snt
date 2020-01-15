@@ -402,9 +402,9 @@ class ElectricMeterReadings(models.Model):
         return reverse('electric-meter-reading-detail', args=[str(self.id)])
 
     # Internal class functions
-
+    
     def get_c_record(self):
-        """Returns record from database with record_type = 'c'
+        """Returns row from database with record_type='c'
         "последняя оплата" for self.plot_number."""
         c_record = ElectricMeterReadings.objects.get(
             Q(plot_number__exact=self.plot_number),
@@ -412,6 +412,16 @@ class ElectricMeterReadings(models.Model):
             Q(record_status__exact='c'),
         )
         return c_record
+
+    def fill_n_record(self):
+        """Fills record_type='n' row (columns t1_prev, t2_prev)
+        with data from record_type='c' row (columns t1_new, t2_new)."""
+        c_record = self.get_c_record()
+        t1_prev = c_record.t1_new
+        t2_prev = c_record.t2_new
+        self.t1_prev = t1_prev
+        self.t2_prev = t2_prev
+        self.save()
 
 
 
