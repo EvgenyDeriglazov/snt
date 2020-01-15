@@ -2,6 +2,8 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
+from datetime import date
+from django.db.models import Q
 
 # Data validators
 def validate_number(value):
@@ -308,7 +310,7 @@ class ElectricMeterReadings(models.Model):
         unique_for_date="record_date",
     )
     record_date = models.DateField(
-        auto_now_add=True,
+        #auto_now_add=True,
         verbose_name="Дата",
         help_text="Дата снятия показаний счетчика",
     )
@@ -319,20 +321,29 @@ class ElectricMeterReadings(models.Model):
     t2_new = models.PositiveIntegerField(
         "Текущее показание (ночь)",
         help_text="Тариф Т2 (23:00-6:00)",
+        default=0,
     )
     t1_prev = models.PositiveIntegerField(
         "Предыдущее показание (день)",
         help_text="Тариф Т1 (6:00-23:00)",
+        blank=True,
+        null=True,
     )
     t2_prev = models.PositiveIntegerField(
         "Предыдущее показание (ночь)",
         help_text="Тариф Т2 (23:00-6:00)",
+        blank=True,
+        null=True,
     )
     t1_cons = models.PositiveIntegerField(
         "Потрачено квт/ч (день)",
+        blank=True,
+        null=True,
     )
     t2_cons = models.PositiveIntegerField(
         "Потрачено квт/ч (ночь)",
+        blank=True,
+        null=True,
     )
 
     
@@ -352,18 +363,27 @@ class ElectricMeterReadings(models.Model):
     )
     pay_date = models.DateField(
         verbose_name = "Дата оплаты",
+        blank=True,
+        null=True,
+
     )
     t1_amount = models.FloatField(
         "Сумма (день)",
         help_text="Сумма по тарифу Т1",
+        blank=True,
+        null=True,
     )
     t2_amount = models.FloatField(
         "Сумма (ночь)",
         help_text="Сумма по тарифу Т2",
+        blank=True,
+        null=True,
     )
     sum_tot = models.FloatField(
         "Итог",
         help_text="Общая сумма к оплате",
+        blank=True,
+        null=True,
     )
 
 
@@ -380,6 +400,18 @@ class ElectricMeterReadings(models.Model):
     def get_absolute_url(self):
         """Returns the url to access a detail record for this chairman."""
         return reverse('electric-meter-reading-detail', args=[str(self.id)])
+
+    # Internal class functions
+
+    def get_c_record(self):
+        """Returns record from database with record_type = 'c'
+        "последняя оплата" for self.plot_number."""
+        c_record = ElectricMeterReadings.objects.get(
+            Q(plot_number__exact=self.plot_number),
+            Q(record_date__lt=date.today()),
+            Q(record_status__exact='c'),
+        )
+        return c_record
 
 
 
