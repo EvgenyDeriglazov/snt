@@ -15,7 +15,7 @@ def validate_number(value):
     if wrong_char_list:
         wrong_string = ", ".join(wrong_char_list)
         raise ValidationError(
-            _('Некорректный символ в номере счета - (' + wrong_string + ')')
+            _('Некорректный символ - (' + wrong_string + ')')
         )
 
 def validate_20_length(value):
@@ -298,6 +298,7 @@ class ElectricMeter(models.Model):
     def get_absolute_url(self):
         """Returns the url to access a detail record for this chairman."""
         return reverse('electric-meter-detail', args=[str(self.id)])
+
 class ElectricMeterReadings(models.Model):
     """Model representing electic meter readings to keep records and
     calculate payment for each land plot."""
@@ -321,32 +322,32 @@ class ElectricMeterReadings(models.Model):
     t2_new = models.PositiveIntegerField(
         "Текущее показание (ночь)",
         help_text="Тариф Т2 (23:00-6:00)",
-        default=0,
+        null=True,
+        default=None,
     )
     t1_prev = models.PositiveIntegerField(
         "Предыдущее показание (день)",
         help_text="Тариф Т1 (6:00-23:00)",
-        blank=True,
         null=True,
+        default=None,
     )
     t2_prev = models.PositiveIntegerField(
         "Предыдущее показание (ночь)",
         help_text="Тариф Т2 (23:00-6:00)",
-        blank=True,
         null=True,
+        default=None,
     )
     t1_cons = models.PositiveIntegerField(
         "Потрачено квт/ч (день)",
-        blank=True,
         null=True,
+        default=None,
     )
     t2_cons = models.PositiveIntegerField(
         "Потрачено квт/ч (ночь)",
-        blank=True,
         null=True,
+        default=None,
     )
 
-    
     RECORD_STATUS = [
         ('n', 'Новые показания'),
         ('p', 'Оплачено через банк'),
@@ -370,22 +371,21 @@ class ElectricMeterReadings(models.Model):
     t1_amount = models.FloatField(
         "Сумма (день)",
         help_text="Сумма по тарифу Т1",
-        blank=True,
         null=True,
+        default=None,
     )
     t2_amount = models.FloatField(
         "Сумма (ночь)",
         help_text="Сумма по тарифу Т2",
-        blank=True,
         null=True,
+        default=None,
     )
     sum_tot = models.FloatField(
         "Итог",
         help_text="Общая сумма к оплате",
-        blank=True,
         null=True,
+        default=None,
     )
-
 
     class Meta:
         verbose_name = "данные показаний счетчика"
@@ -396,16 +396,14 @@ class ElectricMeterReadings(models.Model):
         """String for representing the Model object."""
         return self.plot_number.plot_number + ' ' + str(self.record_date)
 
-
     def get_absolute_url(self):
         """Returns the url to access a detail record for this chairman."""
         return reverse('electric-meter-reading-detail', args=[str(self.id)])
 
     # Internal class functions
-    
     def get_c_record(self):
         """Returns row from database with record_type='c'
-        "последняя оплата" for self.plot_number."""
+        (последняя оплата) for self.plot_number."""
         c_record = ElectricMeterReadings.objects.get(
             Q(plot_number__exact=self.plot_number),
             Q(record_date__lt=date.today()),
@@ -413,14 +411,44 @@ class ElectricMeterReadings(models.Model):
         )
         return c_record
 
+    def get_current_rate(self):
+        """Returns row from database (Rate model) with Rate.rate_status='c'
+        (current rate for electricity T1 and T2 payment calculation)."""
+        rate_record = Rate.objects.filter(rate_status__exact='c').latest('intro_date')
+        
+        return rate_record
+
     def fill_n_record(self):
-        """Fills record_type='n' row (columns t1_prev, t2_prev)
-        with data from record_type='c' row (columns t1_new, t2_new)."""
+        """Fills record_type='n' (new record) row (columns t1_prev, t2_prev)
+        with data from record_type='c' (prev record) row
+        (columns t1_new, t2_new)."""
+        em_model_type = self.plot_number.electric_meter.model_type
         c_record = self.get_c_record()
-        t1_prev = c_record.t1_new
-        t2_prev = c_record.t2_new
-        self.t1_prev = t1_prev
-        self.t2_prev = t2_prev
+
+        if em_model_type == 'T1':
+            self.t1_prev = c_record.t1_new
+            self.t2_prev = None
+        else:
+            self.t1_prev = c_record.t1_new
+            self.t2_prev = c_record.t2_new
+
+        self.save()
+
+    def calculate(self):
+        """Calculates consuMption of electricity and sum for payment.
+        Fills relevant data in record_type='n' t1_cons, t2_cons, t1_amount
+        t2_amount and sum_tot. electric_meter.model_type is taken into
+        account during all calculations and db row pupulating."""
+        self.fill_n_record()
+        em_model_type = self.plot_number.electric_meter.model_type
+        if em_model_type == 'T1':
+            self.t1_cons = self.t1_new - self.t1_prev
+            self.t1.new = None
+            self.t2_cons = None
+        else:
+            self.t1_cons = self.t1_new - self.t1_prev
+            self.t2_cons = self.t2_new - self.t2_prev
+
         self.save()
 
 
@@ -432,6 +460,7 @@ class Rate(models.Model):
     intro_date = models.DateField(
         verbose_name="Дата",
         help_text="Дата введения/изменения тарифа",
+        auto_now_add=True,
     )
     t1_rate = models.FloatField(
         verbose_name="Электроэнергия день",
@@ -442,14 +471,30 @@ class Rate(models.Model):
         help_text="Тариф Т2 (23:00-6:00)",
     )
 
+    RATE_STATUS = [
+        ('c', 'Действущий'),
+
+    ]
+
+    rate_status = models.CharField(
+        "Вид тарифа",
+        max_length=1,
+        choices=RATE_STATUS,
+        default='c',
+        help_text="",
+        unique=True,
+        null=True,
+        blank=True,
+    )
+
     class Meta:
         verbose_name = "Тариф"
         verbose_name_plural = "Тарифы"
-        unique_together = ['intro_date', 't1_rate', 't2_rate']
+        unique_together = ['intro_date', 'rate_status']
 
     def __str__(self):
         """String for representing the Model object."""
-        return self.intro_date
+        return str(self.intro_date)
 
     def get_absolute_url(self):
         """Returns the url to access a detail record for this chairman."""
