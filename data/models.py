@@ -323,28 +323,33 @@ class ElectricMeterReadings(models.Model):
         "Текущее показание (ночь)",
         help_text="Тариф Т2 (23:00-6:00)",
         null=True,
+        blank=True,
         default=None,
     )
     t1_prev = models.PositiveIntegerField(
         "Предыдущее показание (день)",
         help_text="Тариф Т1 (6:00-23:00)",
         null=True,
+        blank=True,
         default=None,
     )
     t2_prev = models.PositiveIntegerField(
         "Предыдущее показание (ночь)",
         help_text="Тариф Т2 (23:00-6:00)",
         null=True,
+        blank=True,
         default=None,
     )
     t1_cons = models.PositiveIntegerField(
         "Потрачено квт/ч (день)",
         null=True,
+        blank=True,
         default=None,
     )
     t2_cons = models.PositiveIntegerField(
         "Потрачено квт/ч (ночь)",
         null=True,
+        blank=True,
         default=None,
     )
 
@@ -366,25 +371,33 @@ class ElectricMeterReadings(models.Model):
         verbose_name = "Дата оплаты",
         blank=True,
         null=True,
-
     )
-    t1_amount = models.FloatField(
+    t1_amount = models.DecimalField(
         "Сумма (день)",
         help_text="Сумма по тарифу Т1",
         null=True,
+        blank=True,
         default=None,
+        max_digits=7,
+        decimal_places=2,
     )
-    t2_amount = models.FloatField(
+    t2_amount = models.DecimalField(
         "Сумма (ночь)",
         help_text="Сумма по тарифу Т2",
         null=True,
+        blank=True,
         default=None,
+        max_digits=7,
+        decimal_places=2,
     )
-    sum_tot = models.FloatField(
+    sum_tot = models.DecimalField(
         "Итог",
         help_text="Общая сумма к оплате",
         null=True,
+        blank=True,
         default=None,
+        max_digits=7,
+        decimal_places=2,
     )
 
     class Meta:
@@ -404,19 +417,19 @@ class ElectricMeterReadings(models.Model):
     def get_c_record(self):
         """Returns row from database with record_type='c'
         (последняя оплата) for self.plot_number."""
-        c_record = ElectricMeterReadings.objects.get(
+        c_record_obj = ElectricMeterReadings.objects.get(
             Q(plot_number__exact=self.plot_number),
             Q(record_date__lt=date.today()),
             Q(record_status__exact='c'),
         )
-        return c_record
+        return c_record_obj
 
     def get_current_rate(self):
         """Returns row from database (Rate model) with Rate.rate_status='c'
         (current rate for electricity T1 and T2 payment calculation)."""
-        rate_record = Rate.objects.filter(rate_status__exact='c').latest('intro_date')
+        current_rate_obj = Rate.objects.filter(rate_status__exact='c').latest('intro_date')
         
-        return rate_record
+        return current_rate_obj
 
     def fill_n_record(self):
         """Fills record_type='n' (new record) row (columns t1_prev, t2_prev)
@@ -428,11 +441,12 @@ class ElectricMeterReadings(models.Model):
         if em_model_type == 'T1':
             self.t1_prev = c_record.t1_new
             self.t2_prev = None
+            self.t2_new = None # Remove data in case of user input mistake
         else:
             self.t1_prev = c_record.t1_new
             self.t2_prev = c_record.t2_new
 
-        self.save()
+        #self.save()
 
     def calculate(self):
         """Calculates consuMption of electricity and sum for payment.
@@ -440,19 +454,24 @@ class ElectricMeterReadings(models.Model):
         t2_amount and sum_tot. electric_meter.model_type is taken into
         account during all calculations and db row pupulating."""
         self.fill_n_record()
+        current_rate_obj = self.get_current_rate()
         em_model_type = self.plot_number.electric_meter.model_type
         if em_model_type == 'T1':
+            # Calculate consumption, amount (T1 rate) and 'sum_tot'
             self.t1_cons = self.t1_new - self.t1_prev
-            self.t1.new = None
             self.t2_cons = None
+            self.t1_amount = self.t1_cons * current_rate_obj.t1_rate
+            self.t2_amount = None
+            self.sum_tot = self.t1_amount
         else:
+            # Calculate consumption, amount (T1 & T2 rates) and 'sum_tot'
             self.t1_cons = self.t1_new - self.t1_prev
             self.t2_cons = self.t2_new - self.t2_prev
+            self.t1_amount = self.t1_cons * current_rate_obj.t1_rate
+            self.t2_amount = self.t2_cons * current_rate_obj.t2_rate
+            self.sum_tot = self.t1_amount + self.t2_amount
 
         self.save()
-
-
-
 
 class Rate(models.Model):
     """Model representing snt rates to calculate 
@@ -462,13 +481,17 @@ class Rate(models.Model):
         help_text="Дата введения/изменения тарифа",
         auto_now_add=True,
     )
-    t1_rate = models.FloatField(
+    t1_rate = models.DecimalField(
         verbose_name="Электроэнергия день",
         help_text="Тариф Т1 (6:00-23:00)",
+        max_digits=4,
+        decimal_places=2,
     )
-    t2_rate = models.FloatField(
+    t2_rate = models.DecimalField(
         verbose_name="Электроэнергия ночь",
         help_text="Тариф Т2 (23:00-6:00)",
+        max_digits=4,
+        decimal_places=2,
     )
 
     RATE_STATUS = [
