@@ -413,23 +413,54 @@ class ElectricMeterReadings(models.Model):
         """Returns the url to access a detail record for this chairman."""
         return reverse('electric-meter-reading-detail', args=[str(self.id)])
 
-    # Internal class functions
+    # Re-use functions for model instance basic operation functions
+    def get_n_record(self):
+        """Returns row from database with record_status='n',
+        new record for particular (self.plot_number)."""
+        n_record_obj = ElectricMeterReadings.objects.get(
+            Q(plot_number__exact=self.plot_number),
+            Q(record_date__lte=date.today()),
+            Q(record_status__exact='n'),
+        )
+        if n_record_obj:
+            return n_record_obj
+        else:
+            return False
+
+    def get_p_record(self):
+        """Returns row from database with record_status='p'
+        (payed via bank) for self.plot_number."""
+        p_record_obj = ElectricMeterReadings.objects.get(
+            Q(plot_number__exact=self.plot_number),
+            Q(record_date__lt=date.today()),
+            Q(record_status__exact='p'),
+        )
+        if p_record_obj:
+            return p_record_obj
+        else:
+            return False
+
     def get_c_record(self):
-        """Returns row from database with record_type='c'
-        (последняя оплата) for self.plot_number."""
+        """Returns row from database with record_status='c'
+        (last confirmed payment) for self.plot_number."""
         c_record_obj = ElectricMeterReadings.objects.get(
             Q(plot_number__exact=self.plot_number),
             Q(record_date__lt=date.today()),
             Q(record_status__exact='c'),
         )
-        return c_record_obj
+        if c_record_obj:
+            return c_record_obj
+        else:
+            return False
 
     def get_current_rate(self):
         """Returns row from database (Rate model) with Rate.rate_status='c'
         (current rate for electricity T1 and T2 payment calculation)."""
         current_rate_obj = Rate.objects.filter(rate_status__exact='c').latest('intro_date')
-        
-        return current_rate_obj
+        if current_rate_obj:
+            return current_rate_obj
+        else:
+            return False
 
     def fill_n_record(self):
         """Fills record_type='n' (new record) row (columns t1_prev, t2_prev)
@@ -438,18 +469,21 @@ class ElectricMeterReadings(models.Model):
         em_model_type = self.plot_number.electric_meter.model_type
         c_record = self.get_c_record()
 
-        if em_model_type == 'T1':
-            self.t1_prev = c_record.t1_new
-            self.t2_prev = None
-            self.t2_new = None # Remove data in case of user input mistake
+        if c_record:
+            if em_model_type == 'T1':
+                self.t1_prev = c_record.t1_new
+                self.t2_prev = None
+                self.t2_new = None # Remove data in case of user input mistake
+            else:
+                self.t1_prev = c_record.t1_new
+                self.t2_prev = c_record.t2_new
         else:
-            self.t1_prev = c_record.t1_new
-            self.t2_prev = c_record.t2_new
-
+            pass
         #self.save()
 
-    def calculate(self):
-        """Calculates consuMption of electricity and sum for payment.
+    # Basic operation functions for model instances (database entities)
+    def calculate_payment(self):
+        """Calculates consumption of electricity and sum for payment.
         Fills relevant data in record_type='n' t1_cons, t2_cons, t1_amount
         t2_amount and sum_tot. electric_meter.model_type is taken into
         account during all calculations and db row pupulating."""
@@ -472,6 +506,25 @@ class ElectricMeterReadings(models.Model):
             self.sum_tot = self.t1_amount + self.t2_amount
 
         self.save()
+
+    def set_paid_via_bank(self):
+        """Change the status of the row (db entity) from new to paid via bank
+        (record_status = 'n' change to record_status = 'p')"""
+        new_p_record = self.get_n_record()
+        new_p_record.record_status = 'p'
+        new_p_record.save()
+
+    def set_payment_confirmed(self):
+        """Change the status of the row (db entity) from 'paid via bank' to
+        'payment confirmed' (record_status = 'p' to record_status = 'c'),
+        and previous 'payment confirmed' to 'old payment' (record_status = 'c'
+        to record_status = 'o')."""
+        current_c_record = self.get_c_record()
+        new_c_record = self.get_p_record()
+        current_c_record.record_status = 'o'
+        new_c_record.record_status = 'c'
+        current_c_record.save()
+        new_c_record.save()
 
 class Rate(models.Model):
     """Model representing snt rates to calculate 
