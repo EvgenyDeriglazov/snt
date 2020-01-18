@@ -99,7 +99,6 @@ class Snt(models.Model):
         help_text="Председатель садоводства",
     )
 
-
     class Meta:
         verbose_name = "СНТ"
         verbose_name_plural = "СНТ"
@@ -111,7 +110,6 @@ class Snt(models.Model):
     def get_absolute_url(self): 
         """Returns the url to access a detail record for this snt.""" 
         return reverse('snt-detail', args=[str(self.id)])
- 
 
 class LandPlot(models.Model):
     """Model representing a land plot with basic information
@@ -152,7 +150,6 @@ class LandPlot(models.Model):
     class Meta:
         verbose_name = "участок"
         verbose_name_plural = "участки"
-
 
     def __str__(self):
         """String for representing the Model object."""
@@ -254,7 +251,6 @@ class Owner(models.Model):
         """Returns the url to access a detail record for this chairman."""
         return reverse('owner-detail', args=[str(self.id)])
 
-
 class ElectricMeter(models.Model):
     """Model representing an electric meter with basic information
     such as serial number, type (1T/2T), land plot (one-to-one)."""
@@ -311,7 +307,7 @@ class ElectricMeterReadings(models.Model):
         unique_for_date="record_date",
     )
     record_date = models.DateField(
-        #auto_now_add=True,
+        auto_now_add=True,
         verbose_name="Дата",
         help_text="Дата снятия показаний счетчика",
     )
@@ -355,8 +351,8 @@ class ElectricMeterReadings(models.Model):
 
     RECORD_STATUS = [
         ('n', 'Новые показания'),
-        ('p', 'Оплачено через банк'),
-        ('c', 'Последняя оплата'),
+        ('p', 'Оплачено'),
+        ('c', 'Оплата подтверждена'),
         ('o', 'Оплачено ранее'),
     ] 
 
@@ -417,50 +413,50 @@ class ElectricMeterReadings(models.Model):
     def get_n_record(self):
         """Returns row from database with record_status='n',
         new record for particular (self.plot_number)."""
-        n_record_obj = ElectricMeterReadings.objects.get(
-            Q(plot_number__exact=self.plot_number),
-            Q(record_date__lte=date.today()),
-            Q(record_status__exact='n'),
-        )
-        if n_record_obj:
-            return n_record_obj
-        else:
+        try:
+            n_record_obj = ElectricMeterReadings.objects.get(
+                Q(plot_number__exact=self.plot_number),
+                Q(record_date__lte=date.today()),
+                Q(record_status__exact='n'),
+            )
+        except:
             return False
+        return n_record_obj
 
     def get_p_record(self):
         """Returns row from database with record_status='p'
         (payed via bank) for self.plot_number."""
-        p_record_obj = ElectricMeterReadings.objects.get(
-            Q(plot_number__exact=self.plot_number),
-            Q(record_date__lt=date.today()),
-            Q(record_status__exact='p'),
-        )
-        if p_record_obj:
-            return p_record_obj
-        else:
+        try:
+            p_record_obj = ElectricMeterReadings.objects.get(
+                Q(plot_number__exact=self.plot_number),
+                Q(record_date__lt=date.today()),
+                Q(record_status__exact='p'),
+            )
+        except:
             return False
+        return p_record_obj
 
     def get_c_record(self):
         """Returns row from database with record_status='c'
         (last confirmed payment) for self.plot_number."""
-        c_record_obj = ElectricMeterReadings.objects.get(
-            Q(plot_number__exact=self.plot_number),
-            Q(record_date__lt=date.today()),
-            Q(record_status__exact='c'),
-        )
-        if c_record_obj:
-            return c_record_obj
-        else:
+        try:
+            c_record_obj = ElectricMeterReadings.objects.get(
+                Q(plot_number__exact=self.plot_number),
+                Q(record_date__lt=date.today()),
+                Q(record_status__exact='c'),
+            )
+        except:
             return False
+        return c_record_obj
 
     def get_current_rate(self):
         """Returns row from database (Rate model) with Rate.rate_status='c'
         (current rate for electricity T1 and T2 payment calculation)."""
-        current_rate_obj = Rate.objects.filter(rate_status__exact='c').latest('intro_date')
-        if current_rate_obj:
-            return current_rate_obj
-        else:
+        try:
+            current_rate_obj = Rate.objects.filter(rate_status__exact='c').latest('intro_date')
+        except:
             return False
+        return current_rate_obj
 
     def fill_n_record(self):
         """Fills record_type='n' (new record) row (columns t1_prev, t2_prev)
@@ -468,18 +464,18 @@ class ElectricMeterReadings(models.Model):
         (columns t1_new, t2_new)."""
         em_model_type = self.plot_number.electric_meter.model_type
         c_record = self.get_c_record()
-
         if c_record:
             if em_model_type == 'T1':
                 self.t1_prev = c_record.t1_new
                 self.t2_prev = None
                 self.t2_new = None # Remove data in case of user input mistake
+                return True
             else:
                 self.t1_prev = c_record.t1_new
                 self.t2_prev = c_record.t2_new
+                return True
         else:
-            pass
-        #self.save()
+            return False
 
     # Basic operation functions for model instances (database entities)
     def calculate_payment(self):
@@ -487,32 +483,34 @@ class ElectricMeterReadings(models.Model):
         Fills relevant data in record_type='n' t1_cons, t2_cons, t1_amount
         t2_amount and sum_tot. electric_meter.model_type is taken into
         account during all calculations and db row pupulating."""
-        self.fill_n_record()
+        fill_n_record = self.fill_n_record()
         current_rate_obj = self.get_current_rate()
         em_model_type = self.plot_number.electric_meter.model_type
-        if em_model_type == 'T1':
+        if em_model_type == 'T1' and fill_n_record and current_rate_obj:
             # Calculate consumption, amount (T1 rate) and 'sum_tot'
             self.t1_cons = self.t1_new - self.t1_prev
             self.t2_cons = None
             self.t1_amount = self.t1_cons * current_rate_obj.t1_rate
             self.t2_amount = None
             self.sum_tot = self.t1_amount
-        else:
+            self.save()
+        elif em_model_type == 'T2' and fill_n_record and current_rate_obj:
             # Calculate consumption, amount (T1 & T2 rates) and 'sum_tot'
             self.t1_cons = self.t1_new - self.t1_prev
             self.t2_cons = self.t2_new - self.t2_prev
             self.t1_amount = self.t1_cons * current_rate_obj.t1_rate
             self.t2_amount = self.t2_cons * current_rate_obj.t2_rate
             self.sum_tot = self.t1_amount + self.t2_amount
+            self.save()
 
-        self.save()
-
-    def set_paid_via_bank(self):
+    def set_paid(self):
         """Change the status of the row (db entity) from new to paid via bank
         (record_status = 'n' change to record_status = 'p')"""
         new_p_record = self.get_n_record()
-        new_p_record.record_status = 'p'
-        new_p_record.save()
+        if new_p_record and new_p_record.sum_tot != None:
+            new_p_record.record_status = 'p'
+            new_p_record.pay_date = date.today()
+            new_p_record.save()
 
     def set_payment_confirmed(self):
         """Change the status of the row (db entity) from 'paid via bank' to
@@ -521,10 +519,14 @@ class ElectricMeterReadings(models.Model):
         to record_status = 'o')."""
         current_c_record = self.get_c_record()
         new_c_record = self.get_p_record()
-        current_c_record.record_status = 'o'
-        new_c_record.record_status = 'c'
-        current_c_record.save()
-        new_c_record.save()
+        if current_c_record and new_c_record:
+            current_c_record.record_status = 'o'
+            new_c_record.record_status = 'c'
+            current_c_record.save()
+            new_c_record.save()
+        elif not current_c_record and new_c_record:
+            new_c_record.record_status = 'c'
+            new_c_record.save()
 
 class Rate(models.Model):
     """Model representing snt rates to calculate 
