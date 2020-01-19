@@ -109,5 +109,10 @@ class SntModelTest(TestCase):
     def test_get_absolute_url(self):
         snt = Snt.objects.get(id=1)
         self.assertEquals(snt.get_absolute_url(), '/data/snt-detail/1')
+
+    def test_verbose_names(self):
+        self.assertEquals(Snt._meta.verbose_name, 'СНТ')
+        self.assertEquals(Snt._meta.verbose_name_plural, 'СНТ')
+        
         
         
