@@ -235,3 +235,187 @@ class LandPlotModelTest(TestCase):
         self.assertEqual(field_label, "СНТ")
         self.assertEqual(help_text, "Расположен в СНТ")
         self.assertEqual(lp_obj.snt, snt_obj)
+
+    def test_owner_field(self):
+        lp_obj = LandPlot.objects.get(id=1)
+        owner_obj = Owner.objects.get(id=1)
+        field_label = lp_obj._meta.get_field('owner').verbose_name
+        help_text = lp_obj._meta.get_field('owner').help_text
+        is_null = lp_obj._meta.get_field('owner').null
+        #on_delete = lp_obj._meta.get_field('owner').on_delete
+        self.assertEqual(field_label, "владелец участка")
+        self.assertEqual(help_text, "Владелец участка")
+        self.assertEqual(is_null, True)
+        #self.assertEqual(on_delete, models.SET_NULL)
+        self.assertEqual(lp_obj.owner, owner_obj)
+
+    def test_electric_meter_field(self):
+        lp_obj = LandPlot.objects.get(id=1)
+        em_obj = ElectricMeter.objects.get(id=1)
+        field_label = lp_obj._meta.get_field('electric_meter').verbose_name
+        help_text = lp_obj._meta.get_field('electric_meter').help_text
+        is_null = lp_obj._meta.get_field('electric_meter').null
+        self.assertEqual(field_label, "Счетчик")
+        self.assertEqual(help_text, "Данные прибора учета электроэнергии")
+        self.assertEqual(is_null, True)
+        self.assertEqual(lp_obj.electric_meter, em_obj)
+        
+    def test_object_name(self):
+        lp_obj = LandPlot.objects.get(id=1)
+        object_name = f'{lp_obj.plot_number}'
+        self.assertEquals(object_name, lp_obj.__str__())
+        # or self.assertEquals(object_name, str(lp_obj))
+    
+    def test_get_absolute_url(self):
+        lp_obj = LandPlot.objects.get(id=1)
+        self.assertEquals(lp_obj.get_absolute_url(), '/data/land-plot-detail/1')
+
+    def test_verbose_names(self):
+        self.assertEquals(LandPlot._meta.verbose_name, 'участок')
+        self.assertEquals(LandPlot._meta.verbose_name_plural, 'участки')
+
+class OwnerModelTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        Owner.objects.create(
+            first_name="Сергей",
+            middle_name="Сергеевич",
+            last_name="Сергеев",
+            status='p',
+            start_owner_date=date(2020, 1, 1),
+            end_owner_date=None,
+        )
+    # Test functions
+    def test_first_name_field(self):
+        owner_obj = Owner.objects.get(id=1)
+        field_label = owner_obj._meta.get_field('first_name').verbose_name
+        max_length = owner_obj._meta.get_field('first_name').max_length
+        help_text = owner_obj._meta.get_field('first_name').help_text
+        validators = owner_obj._meta.get_field('first_name').validators
+        self.assertEquals(field_label, 'Имя')
+        self.assertEquals(max_length, 50)
+        self.assertEquals(help_text, 'Введите имя')
+        self.assertEquals(validators[0:1], [validate_human_names])
+        self.assertEquals(owner_obj.first_name, "Сергей")
+       
+    def test_middle_name_field(self):
+        owner_obj = Owner.objects.get(id=1)
+        field_label = owner_obj._meta.get_field('middle_name').verbose_name
+        max_length = owner_obj._meta.get_field('middle_name').max_length
+        help_text = owner_obj._meta.get_field('middle_name').help_text
+        validators = owner_obj._meta.get_field('middle_name').validators
+        self.assertEquals(field_label, 'Отчество')
+        self.assertEquals(max_length, 50)
+        self.assertEquals(help_text, 'Введите отчество')
+        self.assertEquals(validators[0:1], [validate_human_names])
+        self.assertEquals(owner_obj.middle_name, "Сергеевич")
+    
+    def test_last_name_field(self):
+        owner_obj = Owner.objects.get(id=1)
+        field_label = owner_obj._meta.get_field('last_name').verbose_name
+        max_length = owner_obj._meta.get_field('last_name').max_length
+        help_text = owner_obj._meta.get_field('last_name').help_text
+        validators = owner_obj._meta.get_field('last_name').validators
+        self.assertEquals(field_label, 'Фамилия')
+        self.assertEquals(max_length, 50)
+        self.assertEquals(help_text, 'Введите фамилию')
+        self.assertEquals(validators[0:1], [validate_human_names])
+        self.assertEquals(owner_obj.last_name, "Сергеев")
+    
+    def test_status_field(self):
+        owner_obj = Owner.objects.get(id=1)
+        OWNER_STATUS = [
+            ('c', 'Настоящий'),
+            ('p', 'Прежний'),
+        ]
+        field_label = owner_obj._meta.get_field('status').verbose_name
+        max_length = owner_obj._meta.get_field('status').max_length
+        owner_status = owner_obj._meta.get_field('status').choices
+        defaults = owner_obj._meta.get_field('status').default
+        help_text = owner_obj._meta.get_field('status').help_text
+        self.assertEquals(field_label, 'Статус владельца')
+        self.assertEquals(max_length, 1)
+        self.assertEquals(owner_status, OWNER_STATUS)
+        self.assertEquals(defaults, 'c')
+        self.assertEquals(help_text, 'Статус владельца')
+        self.assertEquals(owner_obj.status, 'p')
+    
+    def test_start_owner_date_field(self):
+        owner_obj = Owner.objects.get(id=1)
+        field_label = owner_obj._meta.get_field('start_owner_date').verbose_name
+        self.assertEquals(field_label, 'дата начала владения')
+        self.assertEquals(owner_obj.start_owner_date, date(2020, 1, 1))
+    
+    def test_end_owner_date_field(self):
+        owner_obj = Owner.objects.get(id=1)
+        field_label = owner_obj._meta.get_field('end_owner_date').verbose_name
+        blank = owner_obj._meta.get_field('end_owner_date').blank
+        null = owner_obj._meta.get_field('end_owner_date').null
+        self.assertEquals(field_label, 'дата окончания владения')
+        self.assertEquals(blank, True)
+        self.assertEquals(null, True)
+        self.assertEquals(owner_obj.end_owner_date, None)
+    
+    def test_object_name(self):
+        obj = Owner.objects.get(id=1)
+        obj_name = f'{obj.last_name} {obj.first_name} {obj.middle_name}'
+        self.assertEquals(obj_name, obj.__str__())
+        # or self.assertEquals(object_name, str(lp_obj))
+    
+    def test_get_absolute_url(self):
+        obj = Owner.objects.get(id=1)
+        self.assertEquals(obj.get_absolute_url(), '/data/owner-detail/1')
+
+    def test_verbose_names(self):
+        self.assertEquals(Owner._meta.verbose_name, 'владелец')
+        self.assertEquals(Owner._meta.verbose_name_plural, 'владельцы')
+       
+class ElectricMeterModelTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        ElectricMeter.objects.create(
+            model="НЕВА",
+            serial_number="123456789",
+            model_type="T2",
+            acceptance_date=None,
+        )
+
+    # Test functions
+    def test_model_field(self):
+        obj = ElectricMeter.objects.get(id=1)
+        field_label = obj._meta.get_field('model').verbose_name
+        max_length = obj._meta.get_field('model').max_length
+        help_text = obj._meta.get_field('model').help_text
+        self.assertEquals(field_label, 'Модель')
+        self.assertEquals(max_length, 50)
+        self.assertEquals(help_text, 'Модель прибора учета электроэнергии')
+        self.assertEquals(obj.model, 'НЕВА')
+    
+    def test_serial_number_field(self):
+        obj = ElectricMeter.objects.get(id=1)
+        field_label = obj._meta.get_field('serial_number').verbose_name
+        max_length = obj._meta.get_field('serial_number').max_length
+        help_text = obj._meta.get_field('serial_number').help_text
+        self.assertEquals(field_label, 'Серийный номер')
+        self.assertEquals(max_length, 50)
+        self.assertEquals(help_text, 'Серийный номер прибора учета электроэнергии')
+        self.assertEquals(obj.serial_number, '123456789')
+    
+    def test_model_type_field(self):
+        obj = ElectricMeter.objects.get(id=1)
+        MODEL_TYPE = [
+            ('T1', 'Однотарифный'),
+            ('T2', 'Двухтарифный'),
+        ]
+        field_label = obj._meta.get_field('model_type').verbose_name
+        max_length = obj._meta.get_field('model_type').max_length
+        choice = obj._meta.get_field('model_type').choices
+        defaults = obj._meta.get_field('model_type').default
+        help_text = obj._meta.get_field('model_type').help_text
+        self.assertEquals(field_label, 'Тип')
+        self.assertEquals(max_length, 2)
+        self.assertEquals(choice, MODEL_TYPE)
+        self.assertEquals(defaults, 'T1')
+        self.assertEquals(help_text, 'Тип прибора учета')
+        self.assertEquals(obj.model_type, 'T2')
+
