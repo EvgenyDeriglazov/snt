@@ -122,7 +122,7 @@ class LandPlot(models.Model):
         help_text="Номер участка",
         unique=True,
     )
-    plot_area = models.FloatField(
+    plot_area = models.PositiveIntegerField(
         "Размер участка",
         help_text="Единица измерения кв.м",
     )

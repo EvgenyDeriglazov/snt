@@ -10,7 +10,8 @@
 # python3 manage.py test data.tests.test_models.TestClass
 
 from django.test import TestCase
-from data.models import Snt, ChairMan
+from data.models import *
+from datetime import date
 
 class SntModelTest(TestCase):
     @classmethod
@@ -31,6 +32,7 @@ class SntModelTest(TestCase):
             kpp='123456789',
             chair_man=ChairMan.objects.get(id=1),
         )
+    # Test functions
     def test_name_field(self):
         snt = Snt.objects.get(id=1)
         field_label = snt._meta.get_field('name').verbose_name
@@ -96,8 +98,10 @@ class SntModelTest(TestCase):
 
     def test_chair_man_field(self):
         snt = Snt.objects.get(id=1)
+        ch_m_obj = ChairMan.objects.get(id=1)
         field_label = snt._meta.get_field('chair_man').verbose_name
         help_text = snt._meta.get_field('chair_man').help_text
+        self.assertEqual(snt.chair_man, ch_m_obj)
         self.assertEqual(field_label, 'председатель')
         self.assertEqual(help_text, 'Председатель садоводства')
     
@@ -122,7 +126,7 @@ class ChairManModelTest(TestCase):
             middle_name='Иванович',
             last_name='Иванов',
         )
-
+    # Test functions
     def test_first_name_field(self):
         ch_m = ChairMan.objects.get(id=1)
         field_label = ch_m._meta.get_field('first_name').verbose_name
@@ -163,5 +167,71 @@ class ChairManModelTest(TestCase):
         self.assertEquals(ChairMan._meta.verbose_name, 'председатель')
         self.assertEquals(ChairMan._meta.verbose_name_plural, 'председатели')
         
-        
-        
+class LandPlotModelTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        ChairMan.objects.create(
+            first_name='Иван',
+            middle_name='Иванович',
+            last_name='Иванов',
+        )
+        Snt.objects.create(
+            name='СНТ Бобровка',
+            personal_acc='01234567898765432101',
+            bank_name='Банк',
+            bic='123456789',
+            corresp_acc='01234567898765432101',
+            inn='0123456789',
+            kpp='123456789',
+            chair_man=ChairMan.objects.get(id=1),
+        )
+        Owner.objects.create(
+            first_name="Сергей",
+            middle_name="Сергеевич",
+            last_name="Сергеев",
+            status='c',
+            start_owner_date=date(2020, 1, 1),
+            end_owner_date=None,
+        )
+        ElectricMeter.objects.create(
+            model="НЕВА",
+            serial_number="123456789",
+            model_type="T1",
+            acceptance_date=None,
+        )
+        LandPlot.objects.create(
+            plot_number="10",
+            plot_area=6000,
+            snt=Snt.objects.get(id=1),
+            owner=Owner.objects.get(id=1),
+            electric_meter=ElectricMeter.objects.get(id=1),
+        )
+    # Test functions
+    def test_plot_number_field(self):
+        l_p = LandPlot.objects.get(id=1)
+        field_label = l_p._meta.get_field('plot_number').verbose_name
+        max_length = l_p._meta.get_field('plot_number').max_length
+        help_text = l_p._meta.get_field('plot_number').help_text 
+        unique_prop = l_p._meta.get_field('plot_number').unique
+        self.assertEqual(field_label, "Номер участка")
+        self.assertEqual(max_length, 10)
+        self.assertEqual(help_text, "Номер участка")
+        self.assertEqual(unique_prop, True)
+        self.assertEqual(l_p.plot_number, "10")
+
+    def test_plot_area_field(self):
+        l_p = LandPlot.objects.get(id=1)
+        field_label = l_p._meta.get_field('plot_area').verbose_name
+        help_text = l_p._meta.get_field('plot_area').help_text 
+        self.assertEqual(field_label, "Размер участка")
+        self.assertEqual(help_text, "Единица измерения кв.м")
+        self.assertEqual(l_p.plot_area, 6000)
+
+    def test_snt_field(self):
+        lp_obj = LandPlot.objects.get(id=1)
+        snt_obj = Snt.objects.get(id=1)
+        field_label = lp_obj._meta.get_field('snt').verbose_name
+        help_text = lp_obj._meta.get_field('snt').help_text 
+        self.assertEqual(field_label, "СНТ")
+        self.assertEqual(help_text, "Расположен в СНТ")
+        self.assertEqual(lp_obj.snt, snt_obj)
