@@ -502,6 +502,7 @@ class RateModelTest(TestCase):
         is_unique = obj._meta.get_field('rate_status').unique
         is_null = obj._meta.get_field('rate_status').null
         is_blank = obj._meta.get_field('rate_status').blank
+        is_unique_for_date = obj._meta.get_field('rate_status').unique_for_date
         self.assertEquals(field_label, 'Вид тарифа')
         self.assertEquals(max_length, 1)
         self.assertEquals(choice, RATE_STATUS)
@@ -510,6 +511,7 @@ class RateModelTest(TestCase):
         self.assertEquals(is_unique, True)
         self.assertEquals(is_null, True)
         self.assertEquals(is_blank, True)
+        self.assertEquals(is_unique_for_date, "intro_date")
         self.assertEquals(obj.rate_status, None)
 
     def test_object_name(self):
@@ -527,4 +529,49 @@ class RateModelTest(TestCase):
         self.assertEquals(Rate._meta.verbose_name_plural, 'Тарифы')
         self.assertEquals(Rate._meta.unique_together, (('intro_date', 'rate_status'),))
 
-
+class ElectricityPaymentsModelTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        ChairMan.objects.create(
+            first_name='Иван',
+            middle_name='Иванович',
+            last_name='Иванов',
+        )
+        Snt.objects.create(
+            name='СНТ Бобровка',
+            personal_acc='01234567898765432101',
+            bank_name='Банк',
+            bic='123456789',
+            corresp_acc='01234567898765432101',
+            inn='0123456789',
+            kpp='123456789',
+            chair_man=ChairMan.objects.get(id=1),
+        )
+        Owner.objects.create(
+            first_name="Сергей",
+            middle_name="Сергеевич",
+            last_name="Сергеев",
+            status='c',
+            start_owner_date=date(2020, 1, 1),
+            end_owner_date=None,
+        )
+        ElectricMeter.objects.create(
+            model="НЕВА",
+            serial_number="123456789",
+            model_type="T1",
+            acceptance_date=None,
+        )
+        LandPlot.objects.create(
+            plot_number="1",
+            plot_area=6000,
+            snt=Snt.objects.get(id=1),
+            owner=Owner.objects.get(id=1),
+            electric_meter=ElectricMeter.objects.get(id=1),
+        )
+        ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=1),
+            record_date=date(2020, 1, 1),
+            t1_new=0,
+            t2_new=0,
+        )
+    # Test functions

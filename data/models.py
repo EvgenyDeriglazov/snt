@@ -296,7 +296,7 @@ class ElectricMeter(models.Model):
         """Returns the url to access a detail record for this chairman."""
         return reverse('electric-meter-detail', args=[str(self.id)])
 
-class ElectricMeterReadings(models.Model):
+class ElectricityPayments(models.Model):
     """Model representing electic meter readings to keep records and
     calculate payment for each land plot."""
     plot_number = models.ForeignKey(
@@ -408,14 +408,14 @@ class ElectricMeterReadings(models.Model):
 
     def get_absolute_url(self):
         """Returns the url to access a detail record for this chairman."""
-        return reverse('electric-meter-reading-detail', args=[str(self.id)])
+        return reverse('electricity-payments-detail', args=[str(self.id)])
 
     # Re-use functions for model instance basic operation functions
     def get_n_record(self):
         """Returns row from database with record_status='n',
         new record for particular (self.plot_number)."""
         try:
-            n_record_obj = ElectricMeterReadings.objects.get(
+            n_record_obj = ElectricityPayments.objects.get(
                 Q(plot_number__exact=self.plot_number),
                 Q(record_date__lte=date.today()),
                 Q(record_status__exact='n'),
@@ -428,7 +428,7 @@ class ElectricMeterReadings(models.Model):
         """Returns row from database with record_status='p'
         (payed via bank) for self.plot_number."""
         try:
-            p_record_obj = ElectricMeterReadings.objects.get(
+            p_record_obj = ElectricityPayments.objects.get(
                 Q(plot_number__exact=self.plot_number),
                 Q(record_date__lt=date.today()),
                 Q(record_status__exact='p'),
@@ -441,7 +441,7 @@ class ElectricMeterReadings(models.Model):
         """Returns row from database with record_status='c'
         (last confirmed payment) for self.plot_number."""
         try:
-            c_record_obj = ElectricMeterReadings.objects.get(
+            c_record_obj = ElectricityPayments.objects.get(
                 Q(plot_number__exact=self.plot_number),
                 Q(record_date__lt=date.today()),
                 Q(record_status__exact='c'),
@@ -564,6 +564,7 @@ class Rate(models.Model):
         unique=True,
         null=True,
         blank=True,
+        unique_for_date="intro_date",
     )
 
     class Meta:
