@@ -551,7 +551,7 @@ class Rate(models.Model):
     )
 
     RATE_STATUS = [
-        ('c', 'Действущий'),
+        ('c', 'Действующий'),
 
     ]
 
