@@ -568,25 +568,30 @@ class ElectricityPaymentsModelTest(TestCase):
             owner=Owner.objects.get(id=1),
             electric_meter=ElectricMeter.objects.get(id=1),
         )
-        ElectricityPayments.objects.create(
+        cls.obj =  ElectricityPayments.objects.create(
             plot_number=LandPlot.objects.get(id=1),
             record_date=date(2020, 1, 1),
             t1_new=0,
             t2_new=0,
         )
+        cls.obj.record_date = date(2020, 1, 1)
+        cls.obj.save()
+        ElectricityPayments.objects.filter(id=1).update(
+            record_date=date(2020, 1, 2)
+        )
     # Test functions
     def test_plot_number_field(self):
-        obj = ElectricityPayments.objects.get(id=1)
+        #obj = ElectricityPayments.objects.get(id=1)
         ref_obj = LandPlot.objects.get(id=1)
-        is_null = obj._meta.get_field('plot_number').null
-        field_label = obj._meta.get_field('plot_number').verbose_name
-        help_text = obj._meta.get_field('plot_number').help_text
-        is_unique = obj._meta.get_field('plot_number').unique_for_date
+        is_null = self.obj._meta.get_field('plot_number').null
+        field_label = self.obj._meta.get_field('plot_number').verbose_name
+        help_text = self.obj._meta.get_field('plot_number').help_text
+        is_unique = self.obj._meta.get_field('plot_number').unique_for_date
         self.assertEqual(is_null, True)
         self.assertEqual(field_label, "Номер участка")
         self.assertEqual(help_text, "Номер участка")
         self.assertEqual(is_unique, "record_date")
-        self.assertEqual(obj.plot_number, ref_obj)
+        self.assertEqual(self.obj.plot_number, ref_obj)
 
     def test_record_date_field(self):
         obj = ElectricityPayments.objects.get(id=1)
@@ -779,3 +784,11 @@ class ElectricityPaymentsModelTest(TestCase):
             ElectricityPayments._meta.unique_together,
             (('record_date', 'plot_number'),)
         )
+    # Model function tests
+    def test_calculate_payment(self):
+        obj = ElectricityPayments.objects.get(id=1)
+        obj.calculate_payment()
+        self.assertEquals(obj, self.obj)
+        self.assertEquals(obj.t1_cons, None)
+        self.assertEquals(obj.fill_n_record(), True)
+        
