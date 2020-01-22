@@ -575,3 +575,207 @@ class ElectricityPaymentsModelTest(TestCase):
             t2_new=0,
         )
     # Test functions
+    def test_plot_number_field(self):
+        obj = ElectricityPayments.objects.get(id=1)
+        ref_obj = LandPlot.objects.get(id=1)
+        is_null = obj._meta.get_field('plot_number').null
+        field_label = obj._meta.get_field('plot_number').verbose_name
+        help_text = obj._meta.get_field('plot_number').help_text
+        is_unique = obj._meta.get_field('plot_number').unique_for_date
+        self.assertEqual(is_null, True)
+        self.assertEqual(field_label, "Номер участка")
+        self.assertEqual(help_text, "Номер участка")
+        self.assertEqual(is_unique, "record_date")
+        self.assertEqual(obj.plot_number, ref_obj)
+
+    def test_record_date_field(self):
+        obj = ElectricityPayments.objects.get(id=1)
+        auto_now_add = obj._meta.get_field('record_date').auto_now_add
+        field_label = obj._meta.get_field('record_date').verbose_name
+        help_text = obj._meta.get_field('record_date').help_text
+        self.assertEqual(auto_now_add, True)
+        self.assertEqual(field_label, "Дата")
+        self.assertEqual(help_text, "Дата снятия показаний счетчика")
+        self.assertEqual(obj.record_date, date.today())
+
+    def test_t1_new_field(self):
+        obj = ElectricityPayments.objects.get(id=1)
+        field_label = obj._meta.get_field('t1_new').verbose_name
+        help_text = obj._meta.get_field('t1_new').help_text
+        self.assertEqual(field_label, "Текущее показание (день)")
+        self.assertEqual(help_text, "Тариф Т1 (6:00-23:00)")
+        self.assertEqual(obj.t1_new, Decimal('0'))
+
+    def test_t2_new_field(self):
+        obj = ElectricityPayments.objects.get(id=1)
+        field_label = obj._meta.get_field('t2_new').verbose_name
+        help_text = obj._meta.get_field('t2_new').help_text
+        is_null = obj._meta.get_field('t2_new').null
+        is_blank = obj._meta.get_field('t2_new').blank
+        is_default = obj._meta.get_field('t2_new').default
+        self.assertEqual(field_label, "Текущее показание (ночь)")
+        self.assertEqual(help_text, "Тариф Т2 (23:00-6:00)")
+        self.assertEqual(is_null, True)
+        self.assertEqual(is_blank, True)
+        self.assertEqual(is_default, None)
+        self.assertEqual(obj.t2_new, Decimal('0'))
+
+    def test_t1_prev_field(self):
+        obj = ElectricityPayments.objects.get(id=1)
+        field_label = obj._meta.get_field('t1_prev').verbose_name
+        help_text = obj._meta.get_field('t1_prev').help_text
+        is_null = obj._meta.get_field('t1_prev').null
+        is_blank = obj._meta.get_field('t1_prev').blank
+        is_default = obj._meta.get_field('t1_prev').default
+        self.assertEqual(field_label, "Предыдущее показание (день)")
+        self.assertEqual(help_text, "Тариф Т1 (6:00-23:00)")
+        self.assertEqual(is_null, True)
+        self.assertEqual(is_blank, True)
+        self.assertEqual(is_default, None)
+        self.assertEqual(obj.t1_prev, None)
+
+    def test_t2_prev_field(self):
+        obj = ElectricityPayments.objects.get(id=1)
+        field_label = obj._meta.get_field('t2_prev').verbose_name
+        help_text = obj._meta.get_field('t2_prev').help_text
+        is_null = obj._meta.get_field('t2_prev').null
+        is_blank = obj._meta.get_field('t2_prev').blank
+        is_default = obj._meta.get_field('t2_prev').default
+        self.assertEqual(field_label, "Предыдущее показание (ночь)")
+        self.assertEqual(help_text, "Тариф Т2 (23:00-6:00)")
+        self.assertEqual(is_null, True)
+        self.assertEqual(is_blank, True)
+        self.assertEqual(is_default, None)
+        self.assertEqual(obj.t2_prev, None)
+
+    def test_t1_cons_field(self):
+        obj = ElectricityPayments.objects.get(id=1)
+        field_label = obj._meta.get_field('t1_cons').verbose_name
+        is_null = obj._meta.get_field('t1_cons').null
+        is_blank = obj._meta.get_field('t1_cons').blank
+        is_default = obj._meta.get_field('t1_cons').default
+        self.assertEqual(field_label, "Потрачено квт/ч (день)")
+        self.assertEqual(is_null, True)
+        self.assertEqual(is_blank, True)
+        self.assertEqual(is_default, None)
+        self.assertEqual(obj.t1_cons, None)
+
+    def test_t2_cons_field(self):
+        obj = ElectricityPayments.objects.get(id=1)
+        field_label = obj._meta.get_field('t2_cons').verbose_name
+        is_null = obj._meta.get_field('t2_cons').null
+        is_blank = obj._meta.get_field('t2_cons').blank
+        is_default = obj._meta.get_field('t2_cons').default
+        self.assertEqual(field_label, "Потрачено квт/ч (ночь)")
+        self.assertEqual(is_null, True)
+        self.assertEqual(is_blank, True)
+        self.assertEqual(is_default, None)
+        self.assertEqual(obj.t2_cons, None)
+   
+    def test_record_status_field(self):
+        obj = ElectricityPayments.objects.get(id=1)
+        RECORD_STATUS = [
+            ('n', 'Новые показания'),
+            ('p', 'Оплачено'),
+            ('c', 'Оплата подтверждена'),
+            ('o', 'Оплачено ранее'),
+        ]
+        field_label = obj._meta.get_field('record_status').verbose_name
+        max_length = obj._meta.get_field('record_status').max_length
+        choice = obj._meta.get_field('record_status').choices
+        is_default = obj._meta.get_field('record_status').default
+        help_text = obj._meta.get_field('record_status').help_text
+        self.assertEquals(field_label, 'Статус')
+        self.assertEquals(max_length, 1)
+        self.assertEquals(choice, RECORD_STATUS)
+        self.assertEquals(is_default, 'n')
+        self.assertEquals(help_text, 'Статус показаний')
+        self.assertEquals(obj.record_status, 'n')
+
+    def test_pay_date_field(self):
+        obj = ElectricityPayments.objects.get(id=1)
+        field_label = obj._meta.get_field('pay_date').verbose_name
+        is_blank = obj._meta.get_field('pay_date').blank
+        is_null = obj._meta.get_field('pay_date').null
+        self.assertEqual(field_label, "Дата оплаты")
+        self.assertEqual(is_blank, True)
+        self.assertEqual(is_null, True)
+        self.assertEqual(obj.pay_date, None)
+
+    def test_t1_amount_field(self):
+        obj = ElectricityPayments.objects.get(id=1)
+        field_label = obj._meta.get_field('t1_amount').verbose_name
+        help_text = obj._meta.get_field('t1_amount').help_text
+        is_null = obj._meta.get_field('t1_amount').null
+        is_blank = obj._meta.get_field('t1_amount').blank
+        is_default = obj._meta.get_field('t1_amount').default
+        is_max_digits = obj._meta.get_field('t1_amount').max_digits
+        is_dec_places = obj._meta.get_field('t1_amount').decimal_places
+        self.assertEqual(field_label, "Сумма (день)")
+        self.assertEqual(help_text, "Сумма по тарифу Т1")
+        self.assertEqual(is_null, True)
+        self.assertEqual(is_blank, True)
+        self.assertEqual(is_default, None)
+        self.assertEqual(is_max_digits, 7)
+        self.assertEqual(is_dec_places, 2)
+        self.assertEqual(obj.t1_amount, None)
+
+    def test_t2_amount_field(self):
+        obj = ElectricityPayments.objects.get(id=1)
+        field_label = obj._meta.get_field('t2_amount').verbose_name
+        help_text = obj._meta.get_field('t2_amount').help_text
+        is_null = obj._meta.get_field('t2_amount').null
+        is_blank = obj._meta.get_field('t2_amount').blank
+        is_default = obj._meta.get_field('t2_amount').default
+        is_max_digits = obj._meta.get_field('t2_amount').max_digits
+        is_dec_places = obj._meta.get_field('t2_amount').decimal_places
+        self.assertEqual(field_label, "Сумма (ночь)")
+        self.assertEqual(help_text, "Сумма по тарифу Т2")
+        self.assertEqual(is_null, True)
+        self.assertEqual(is_blank, True)
+        self.assertEqual(is_default, None)
+        self.assertEqual(is_max_digits, 7)
+        self.assertEqual(is_dec_places, 2)
+        self.assertEqual(obj.t2_amount, None)
+
+    def test_sum_tot_field(self):
+        obj = ElectricityPayments.objects.get(id=1)
+        field_label = obj._meta.get_field('sum_tot').verbose_name
+        help_text = obj._meta.get_field('sum_tot').help_text
+        is_null = obj._meta.get_field('sum_tot').null
+        is_blank = obj._meta.get_field('sum_tot').blank
+        is_default = obj._meta.get_field('sum_tot').default
+        is_max_digits = obj._meta.get_field('sum_tot').max_digits
+        is_dec_places = obj._meta.get_field('sum_tot').decimal_places
+        self.assertEqual(field_label, "Итог")
+        self.assertEqual(help_text, "Общая сумма к оплате")
+        self.assertEqual(is_null, True)
+        self.assertEqual(is_blank, True)
+        self.assertEqual(is_default, None)
+        self.assertEqual(is_max_digits, 7)
+        self.assertEqual(is_dec_places, 2)
+        self.assertEqual(obj.sum_tot, None)
+
+    def test_object_name(self):
+        obj = ElectricityPayments.objects.get(id=1)
+        obj_name = f'{obj.plot_number.plot_number} {str(obj.record_date)}' 
+        self.assertEquals(obj_name, obj.__str__())
+        # or self.assertEquals(object_name, str(lp_obj))
+    
+    def test_get_absolute_url(self):
+        obj = Rate.objects.get(id=1)
+        self.assertEquals(obj.get_absolute_url(), '/data/electricity-payments-detail/1')
+
+    def test_verbose_names(self):
+        self.assertEquals(
+            ElectricityPayments._meta.verbose_name,
+            'электроэнергия'
+        )
+        self.assertEquals(
+            ElectricityPayments._meta.verbose_name_plural,
+            'электроэнергия'
+        )
+        self.assertEquals(
+            ElectricityPayments._meta.unique_together,
+            (('record_date', 'plot_number'),)
+        )

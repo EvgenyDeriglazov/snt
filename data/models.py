@@ -314,7 +314,7 @@ class ElectricityPayments(models.Model):
     )
     t1_new = models.PositiveIntegerField(
         "Текущее показание (день)",
-        help_text="Тариф T1 (6:00-23:00)",
+        help_text="Тариф Т1 (6:00-23:00)",
     )
     t2_new = models.PositiveIntegerField(
         "Текущее показание (ночь)",
@@ -398,8 +398,8 @@ class ElectricityPayments(models.Model):
     )
 
     class Meta:
-        verbose_name = "данные показаний счетчика"
-        verbose_name_plural = "показания счетчика"
+        verbose_name = "электроэнергия"
+        verbose_name_plural = "электроэнергия"
         unique_together = ['record_date', 'plot_number']
 
     def __str__(self):
