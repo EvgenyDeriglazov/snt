@@ -60,57 +60,10 @@ class ElectricityPaymentsModelTest(TestCase):
             t1_new=0,
             t2_new=0,
         )
-        cls.obj_o =  ElectricityPayments.objects.create(
-            plot_number=LandPlot.objects.get(id=1),
-            record_date=date(2020, 1, 1),
-            t1_new=0,
-            t2_new=0,
-        )
-        ElectricityPayments.objects.filter(id=2).update(
-            record_date=date(2020, 1 ,4)
-        )
-        cls.obj_c =  ElectricityPayments.objects.create(
-            plot_number=LandPlot.objects.get(id=1),
-            record_date=date(2020, 1, 1),
-            t1_new=0,
-            t2_new=0,
-        )       
-        ElectricityPayments.objects.filter(id=3).update(
-            record_date=date(2020, 1 ,3)
-        )
-        cls.obj_p =  ElectricityPayments.objects.create(
-            plot_number=LandPlot.objects.get(id=1),
-            record_date=date(2020, 1, 1),
-            t1_new=0,
-            t2_new=0,
-        )       
-        ElectricityPayments.objects.filter(id=4).update(
-            record_date=date(2020, 1 ,2)
-        )
-        cls.obj_n =  ElectricityPayments.objects.create(
-            plot_number=LandPlot.objects.get(id=1),
-            record_date=date(2020, 1, 1),
-            t1_new=0,
-            t2_new=0,
-        )       
-        cls.obj_ref_1 =  ElectricityPayments.objects.create(
-            plot_number=LandPlot.objects.get(id=1),
-            record_date=date(2020, 1, 1),
-            t1_new=0,
-            t2_new=0,
-        )       
-        cls.obj_ref_2 =  ElectricityPayments.objects.create(
-            plot_number=LandPlot.objects.get(id=1),
-            record_date=date(2020, 1, 1),
-            t1_new=0,
-            t2_new=0,
-        )       
-        cls.obj.record_date = date(2020, 1, 1)
-        cls.obj.save()
         ElectricityPayments.objects.filter(id=1).update(
-            record_date=date(2020, 1, 2)
-        )
-    # Test functions
+            record_date=date(2020, 1, 1))
+        
+    # Test fields
     def test_plot_number_field(self):
         #obj = ElectricityPayments.objects.get(id=1)
         ref_obj = LandPlot.objects.get(id=1)
@@ -132,7 +85,7 @@ class ElectricityPaymentsModelTest(TestCase):
         self.assertEqual(auto_now_add, True)
         self.assertEqual(field_label, "Дата")
         self.assertEqual(help_text, "Дата снятия показаний счетчика")
-        self.assertEqual(obj.record_date, date.today())
+        self.assertEqual(obj.record_date, date.(2020, 1, 1))
 
     def test_t1_new_field(self):
         obj = ElectricityPayments.objects.get(id=1)
@@ -214,7 +167,7 @@ class ElectricityPaymentsModelTest(TestCase):
             ('n', 'Новые показания'),
             ('p', 'Оплачено'),
             ('c', 'Оплата подтверждена'),
-            ('o', 'Оплачено ранее'),
+            ('i', 'Первые показания'),
         ]
         field_label = obj._meta.get_field('record_status').verbose_name
         max_length = obj._meta.get_field('record_status').max_length
@@ -315,11 +268,52 @@ class ElectricityPaymentsModelTest(TestCase):
             ElectricityPayments._meta.unique_together,
             (('record_date', 'plot_number'),)
         )
-    # Model function tests
-    def test_calculate_payment(self):
-        obj = ElectricityPayments.objects.get(id=1)
-        obj.calculate_payment()
-        self.assertEquals(obj, self.obj)
-        self.assertEquals(obj.t1_cons, None)
-        self.assertEquals(obj.fill_n_record(), True)
-        
+    # Test model class methods
+    def test_set_initial_function(self):
+        """Test set_initial() with one record (n/i) in database to make sure
+        that changes will be applied properly to the record or 
+        error message (false) returned."""
+        self.assertEquals(self.obj.record_status, 'n')
+        self.obj.set_initial()
+        self.assertEquals(self.obj.record_status, 'i')
+        check = self.obj.set_initial()
+        self.assertEquals(check, False)
+        self.obj.record_status = 'n'
+
+    def test_set_initial_function_with_two_records(self):
+        """Test set_initial() with 2 records in database to make sure
+        no changes will be applied to any of the records."""
+        obj_1 =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=1),
+            t1_new=0,
+            t2_new=0,
+        )
+        obj_1.set_initial()
+        self.assertEquals(obj_1.record_status, 'n')
+        self.assertEquals(self.obj.record_status, 'n')
+        obj_1.delete()
+
+    def test_get_i_record_function(self):
+        """Test get_i_record() with one record (i) in database to make sure 
+        that either record (i) or error message (false) returned."""
+        pass
+
+    def test_get_n_record_function(self):
+        """Test get_n_record() with one record (n) in database to make sure 
+        that either record (n) or error message (false) returned."""
+        pass
+
+    def test_get_p_record_function(self):
+        """Test get_p_record() with one record (p) in database to make sure 
+        that either record (p) or error message (false) returned."""
+        pass
+
+    def test_get_c_record_function(self):
+        """Test get_c_record() with one record (c) in database to make sure 
+        that either record (c) or error message (false) returned."""
+        pass
+
+    def test_fill_n_record_function_with_single_i_record(self):
+        """Test fill_n_record() with only one record in db (i) to make sure
+        that new record (n) will be processed by the function."""
+        pass

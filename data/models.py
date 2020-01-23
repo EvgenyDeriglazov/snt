@@ -354,7 +354,6 @@ class ElectricityPayments(models.Model):
         ('n', 'Новые показания'),
         ('p', 'Оплачено'),
         ('c', 'Оплата подтверждена'),
-        ('o', 'Оплачено ранее'),
         ('i', 'Первые показания'),
     ] 
 
@@ -412,6 +411,19 @@ class ElectricityPayments(models.Model):
         return reverse('electricity-payments-detail', args=[str(self.id)])
 
     # Re-use functions for model instance basic operation functions
+    def get_i_record(self):
+        """Returns row from database with record_status='i',
+        initial record for particular (self.plot_number)."""
+        try:
+            i_record_obj = ElectricityPayments.objects.get(
+                Q(plot_number__exact=self.plot_number),
+                Q(record_date__lte=date.today()),
+                Q(record_status__exact='i'),
+            )
+        except:
+            return False
+        return i_record_obj
+
     def get_n_record(self):
         """Returns row from database with record_status='n',
         new record for particular (self.plot_number)."""
@@ -442,11 +454,9 @@ class ElectricityPayments(models.Model):
         """Returns row from database with record_status='c'
         (last confirmed payment) for self.plot_number."""
         try:
-            c_record_obj = ElectricityPayments.objects.get(
-                Q(plot_number__exact=self.plot_number),
-                Q(record_date__lte=date.today()),
-                Q(record_status__exact='c'),
-            )
+            c_record_obj = ElectricityPayments.objects.filter(
+                plot_number__exact=self.plot_number,
+                record_status__exact='c').latest('record_date')
         except:
             return False
         return c_record_obj
@@ -469,78 +479,27 @@ class ElectricityPayments(models.Model):
         em_model_type = self.plot_number.electric_meter.model_type
         c_record = self.get_c_record()
         p_record = self.get_p_record()
+        # If c_record exists and no p_record available - start filling
         if c_record and not p_record:
+            # Fill (self) record (T1 rate only)
             if em_model_type == 'T1':
                 self.t1_prev = c_record.t1_new
                 self.t2_prev = None
                 self.t2_new = None # Remove data in case of user input mistake
                 return True
+            # Fill (self) record (T1 and T2 rates)
             else:
                 self.t1_prev = c_record.t1_new
                 self.t2_prev = c_record.t2_new
                 return True
-        elif not c_record and not p_record:
-            return False
+        # If p_record exists - raise an error
+        elif p_record:
+            return False 
+        # If no c_record available - raise an error
         elif not c_record:
-            return False
-        else:
-            return False
+            return False # raise error
 
     # Basic operation functions for model instances (database entities)
-    def calculate_payment(self):
-        """Calculates consumption of electricity and sum for payment.
-        Fills relevant data in record_type='n' t1_cons, t2_cons, t1_amount
-        t2_amount and sum_tot. electric_meter.model_type is taken into
-        account during all calculations and db row pupulating."""
-        fill_n_record = self.fill_n_record()
-        current_rate_obj = self.get_current_rate()
-        em_model_type = self.plot_number.electric_meter.model_type
-        if em_model_type == 'T1' and fill_n_record and current_rate_obj:
-            # Calculate consumption, amount (T1 rate) and 'sum_tot'
-            self.t1_cons = self.t1_new - self.t1_prev
-            self.t2_cons = None
-            self.t1_amount = self.t1_cons * current_rate_obj.t1_rate
-            self.t2_amount = None
-            self.sum_tot = self.t1_amount
-            self.save()
-        elif em_model_type == 'T2' and fill_n_record and current_rate_obj:
-            # Calculate consumption, amount (T1 & T2 rates) and 'sum_tot'
-            self.t1_cons = self.t1_new - self.t1_prev
-            self.t2_cons = self.t2_new - self.t2_prev
-            self.t1_amount = self.t1_cons * current_rate_obj.t1_rate
-            self.t2_amount = self.t2_cons * current_rate_obj.t2_rate
-            self.sum_tot = self.t1_amount + self.t2_amount
-            self.save()
-
-    def set_paid(self):
-        """Change the status of the row (db entity) from new to paid via bank
-        (record_status = 'n' change to record_status = 'p')"""
-        if self.record_status != 'n':
-            return False
-        new_p_record = self.get_n_record()
-        if new_p_record and new_p_record.sum_tot != None:
-            new_p_record.record_status = 'p'
-            new_p_record.pay_date = date.today()
-            new_p_record.save()
-
-    def set_payment_confirmed(self):
-        """Change the status of the row (db entity) from 'paid via bank' to
-        'payment confirmed' (record_status = 'p' to record_status = 'c'),
-        and previous 'payment confirmed' to 'old payment' (record_status = 'c'
-        to record_status = 'o')."""
-        if self.record_status != 'p':
-            return False
-        current_c_record = self.get_c_record()
-        new_c_record = self.get_p_record()
-        if current_c_record and new_c_record:
-            current_c_record.record_status = 'o'
-            new_c_record.record_status = 'c'
-            current_c_record.save()
-            new_c_record.save()
-        elif not current_c_record and new_c_record:
-            new_c_record.record_status = 'c'
-            new_c_record.save()
-
     def set_initial(self):
         """Set the status of the row (db entry) to old_payment
         (record_status = 'o')."""
@@ -573,6 +532,60 @@ class ElectricityPayments(models.Model):
                 self.save()
         else:
             return False
+
+    def set_paid(self):
+        """Change the status of the row (db entity) from new to paid via bank
+        (record_status = 'n' change to record_status = 'p')"""
+        if self.record_status != 'n':
+            return False
+        new_p_record = self.get_n_record()
+        if new_p_record and new_p_record.sum_tot != None:
+            new_p_record.record_status = 'p'
+            new_p_record.pay_date = date.today()
+            new_p_record.save()
+
+    def calculate_payment(self):
+        """Calculates consumption of electricity and sum for payment.
+        Fills relevant data in record_type='n' t1_cons, t2_cons, t1_amount
+        t2_amount and sum_tot. electric_meter.model_type is taken into
+        account during all calculations and db row pupulating."""
+        fill_n_record = self.fill_n_record()
+        current_rate_obj = self.get_current_rate()
+        em_model_type = self.plot_number.electric_meter.model_type
+        if em_model_type == 'T1' and fill_n_record and current_rate_obj:
+            # Calculate consumption, amount (T1 rate) and 'sum_tot'
+            self.t1_cons = self.t1_new - self.t1_prev
+            self.t2_cons = None
+            self.t1_amount = self.t1_cons * current_rate_obj.t1_rate
+            self.t2_amount = None
+            self.sum_tot = self.t1_amount
+            self.save()
+        elif em_model_type == 'T2' and fill_n_record and current_rate_obj:
+            # Calculate consumption, amount (T1 & T2 rates) and 'sum_tot'
+            self.t1_cons = self.t1_new - self.t1_prev
+            self.t2_cons = self.t2_new - self.t2_prev
+            self.t1_amount = self.t1_cons * current_rate_obj.t1_rate
+            self.t2_amount = self.t2_cons * current_rate_obj.t2_rate
+            self.sum_tot = self.t1_amount + self.t2_amount
+            self.save()
+
+    def set_payment_confirmed(self):
+        """Change the status of the row (db entity) from 'paid via bank' to
+        'payment confirmed' (record_status = 'p' to record_status = 'c'),
+        and previous 'payment confirmed' to 'old payment' (record_status = 'c'
+        to record_status = 'o')."""
+        if self.record_status != 'p':
+            return False
+        current_c_record = self.get_c_record()
+        new_c_record = self.get_p_record()
+        if current_c_record and new_c_record:
+            current_c_record.record_status = 'o'
+            new_c_record.record_status = 'c'
+            current_c_record.save()
+            new_c_record.save()
+        elif not current_c_record and new_c_record:
+            new_c_record.record_status = 'c'
+            new_c_record.save()
 
 class Rate(models.Model):
     """Model representing snt rates to calculate 
