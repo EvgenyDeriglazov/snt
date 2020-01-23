@@ -355,6 +355,7 @@ class ElectricityPayments(models.Model):
         ('p', 'Оплачено'),
         ('c', 'Оплата подтверждена'),
         ('o', 'Оплачено ранее'),
+        ('i', 'Первые показания'),
     ] 
 
     record_status = models.CharField(
@@ -430,7 +431,7 @@ class ElectricityPayments(models.Model):
         try:
             p_record_obj = ElectricityPayments.objects.get(
                 Q(plot_number__exact=self.plot_number),
-                Q(record_date__lt=date.today()),
+                Q(record_date__lte=date.today()),
                 Q(record_status__exact='p'),
             )
         except:
@@ -443,7 +444,7 @@ class ElectricityPayments(models.Model):
         try:
             c_record_obj = ElectricityPayments.objects.get(
                 Q(plot_number__exact=self.plot_number),
-                Q(record_date__lt=date.today()),
+                Q(record_date__lte=date.today()),
                 Q(record_status__exact='c'),
             )
         except:
@@ -463,9 +464,12 @@ class ElectricityPayments(models.Model):
         """Fills record_type='n' (new record) row (columns t1_prev, t2_prev)
         with data from record_type='c' (prev record) row
         (columns t1_new, t2_new)."""
+        if self.record_status != 'n':
+            return False
         em_model_type = self.plot_number.electric_meter.model_type
         c_record = self.get_c_record()
-        if c_record:
+        p_record = self.get_p_record()
+        if c_record and not p_record:
             if em_model_type == 'T1':
                 self.t1_prev = c_record.t1_new
                 self.t2_prev = None
@@ -475,6 +479,10 @@ class ElectricityPayments(models.Model):
                 self.t1_prev = c_record.t1_new
                 self.t2_prev = c_record.t2_new
                 return True
+        elif not c_record and not p_record:
+            return False
+        elif not c_record:
+            return False
         else:
             return False
 
@@ -507,6 +515,8 @@ class ElectricityPayments(models.Model):
     def set_paid(self):
         """Change the status of the row (db entity) from new to paid via bank
         (record_status = 'n' change to record_status = 'p')"""
+        if self.record_status != 'n':
+            return False
         new_p_record = self.get_n_record()
         if new_p_record and new_p_record.sum_tot != None:
             new_p_record.record_status = 'p'
@@ -518,6 +528,8 @@ class ElectricityPayments(models.Model):
         'payment confirmed' (record_status = 'p' to record_status = 'c'),
         and previous 'payment confirmed' to 'old payment' (record_status = 'c'
         to record_status = 'o')."""
+        if self.record_status != 'p':
+            return False
         current_c_record = self.get_c_record()
         new_c_record = self.get_p_record()
         if current_c_record and new_c_record:
@@ -528,6 +540,39 @@ class ElectricityPayments(models.Model):
         elif not current_c_record and new_c_record:
             new_c_record.record_status = 'c'
             new_c_record.save()
+
+    def set_initial(self):
+        """Set the status of the row (db entry) to old_payment
+        (record_status = 'o')."""
+        all_obj = ElectricityPayments.objects.filter(
+            plot_number__exact=self.plot_number,
+        )
+        length = len(all_obj)
+        if length == 1 and self.record_status == 'n':
+            em_model_type = self.plot_number.electric_meter.model_type
+            if em_model_type == 'T1':
+                self.t1_prev = 0
+                self.t1_cons = 0
+                self.t1_amount = 0
+                self.sum_tot = 0
+                self.t2_new = None
+                self.t2_prev = None
+                self.t2_cons = None
+                self.t2_amount = None
+                self.record_status = 'i'
+                self.save()
+            elif em_model_type == 'T2':
+                self.t1_prev = 0
+                self.t2_prev = 0
+                self.t1_cons = 0
+                self.t2_cons = 0
+                self.t1_amount = 0
+                self.t2_amount = 0
+                self.sum_tot = 0
+                self.record_status = 'i'
+                self.save()
+        else:
+            return False
 
 class Rate(models.Model):
     """Model representing snt rates to calculate 

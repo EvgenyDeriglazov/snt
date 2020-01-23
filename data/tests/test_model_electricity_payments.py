@@ -60,6 +60,51 @@ class ElectricityPaymentsModelTest(TestCase):
             t1_new=0,
             t2_new=0,
         )
+        cls.obj_o =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=1),
+            record_date=date(2020, 1, 1),
+            t1_new=0,
+            t2_new=0,
+        )
+        ElectricityPayments.objects.filter(id=2).update(
+            record_date=date(2020, 1 ,4)
+        )
+        cls.obj_c =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=1),
+            record_date=date(2020, 1, 1),
+            t1_new=0,
+            t2_new=0,
+        )       
+        ElectricityPayments.objects.filter(id=3).update(
+            record_date=date(2020, 1 ,3)
+        )
+        cls.obj_p =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=1),
+            record_date=date(2020, 1, 1),
+            t1_new=0,
+            t2_new=0,
+        )       
+        ElectricityPayments.objects.filter(id=4).update(
+            record_date=date(2020, 1 ,2)
+        )
+        cls.obj_n =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=1),
+            record_date=date(2020, 1, 1),
+            t1_new=0,
+            t2_new=0,
+        )       
+        cls.obj_ref_1 =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=1),
+            record_date=date(2020, 1, 1),
+            t1_new=0,
+            t2_new=0,
+        )       
+        cls.obj_ref_2 =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=1),
+            record_date=date(2020, 1, 1),
+            t1_new=0,
+            t2_new=0,
+        )       
         cls.obj.record_date = date(2020, 1, 1)
         cls.obj.save()
         ElectricityPayments.objects.filter(id=1).update(
