@@ -85,7 +85,7 @@ class ElectricityPaymentsModelTest(TestCase):
         self.assertEqual(auto_now_add, True)
         self.assertEqual(field_label, "Дата")
         self.assertEqual(help_text, "Дата снятия показаний счетчика")
-        self.assertEqual(obj.record_date, date.(2020, 1, 1))
+        self.assertEqual(obj.record_date, date(2020, 1, 1))
 
     def test_t1_new_field(self):
         obj = ElectricityPayments.objects.get(id=1)
@@ -270,50 +270,77 @@ class ElectricityPaymentsModelTest(TestCase):
         )
     # Test model class methods
     def test_set_initial_function(self):
-        """Test set_initial() with one record (n/i) in database to make sure
-        that changes will be applied properly to the record or 
-        error message (false) returned."""
+        """Test set_initial() for following states:
+        (n) record in db - change record_status to 'i'
+        (i) record in db - return error (False)
+        (i,n) records in db - return error (False)"""
+        # Check initial state
         self.assertEquals(self.obj.record_status, 'n')
-        self.obj.set_initial()
+        # State 1 check
+        check = self.obj.set_initial()
         self.assertEquals(self.obj.record_status, 'i')
+        self.assertEquals(check, self.obj)
+        # State 2 check
         check = self.obj.set_initial()
         self.assertEquals(check, False)
-        self.obj.record_status = 'n'
-
-    def test_set_initial_function_with_two_records(self):
-        """Test set_initial() with 2 records in database to make sure
-        no changes will be applied to any of the records."""
+        # State 3 check
         obj_1 =  ElectricityPayments.objects.create(
             plot_number=LandPlot.objects.get(id=1),
             t1_new=0,
             t2_new=0,
         )
-        obj_1.set_initial()
+        check = obj_1.set_initial()
         self.assertEquals(obj_1.record_status, 'n')
-        self.assertEquals(self.obj.record_status, 'n')
+        self.assertEquals(check, self.obj_1)
+        # Remove new entity and keep record (i)
         obj_1.delete()
 
     def test_get_i_record_function(self):
-        """Test get_i_record() with one record (i) in database to make sure 
-        that either record (i) or error message (false) returned."""
+        """Test get_i_record() for following states:
+        (i) record in db - return i_record object
+        (n) record in db - return error (False)"""
         pass
 
     def test_get_n_record_function(self):
-        """Test get_n_record() with one record (n) in database to make sure 
-        that either record (n) or error message (false) returned."""
+        """Test get_n_record() for following states:
+        (i) record in db - return error (False)
+        (i,n) records in db - return n_record object"""
         pass
 
     def test_get_p_record_function(self):
-        """Test get_p_record() with one record (p) in database to make sure 
-        that either record (p) or error message (false) returned."""
+        """Test get_p_record() for following states:
+        (i) record in db - return error (False) 
+        (i,p) records in db - return p_record object"""
         pass
 
     def test_get_c_record_function(self):
-        """Test get_c_record() with one record (c) in database to make sure 
-        that either record (c) or error message (false) returned."""
+        """Test get_c_record() for following states:
+        (i) record in db - return error (False)
+        (i,c) records in db - return c_record
+        (i,c,c..) records in db - return latest c_record object"""
         pass
 
-    def test_fill_n_record_function_with_single_i_record(self):
-        """Test fill_n_record() with only one record in db (i) to make sure
-        that new record (n) will be processed by the function."""
+    def test_get_current_rate_function(self):
+        """Test descr."""
         pass
+
+    def test_fill_n_record_function(self):
+        """Test fill_n_record() for following states:
+        (i,n) records in db - use data from i_record object
+        (i,c) records in db - use data from c_record object
+        (i,c,p,n) records in db - return error (False)
+        (i,p,n) records in db - return error (False)"""
+        pass
+        
+    def test_calculate_payment_function(self):
+        """Test descr."""
+        pass
+
+    def test_set_paid_function(self):
+        """Test descr."""
+        pass
+
+    def test_set_payment_confirmed_function(self):
+        """Test descr."""
+        pass
+
