@@ -578,7 +578,7 @@ class ElectricityPayments(models.Model):
         if self.record_status != 'n':
             return False
         new_p_record = self.get_n_record()
-        if new_p_record and new_p_record.sum_tot != None:
+        if new_p_record and new_p_record.sum_tot > 0:
             new_p_record.record_status = 'p'
             new_p_record.pay_date = date.today()
             new_p_record.save()
@@ -588,16 +588,10 @@ class ElectricityPayments(models.Model):
         'payment confirmed' (record_status = 'p' to record_status = 'c'),
         and previous 'payment confirmed' to 'old payment' (record_status = 'c'
         to record_status = 'o')."""
-        if self.record_status != 'p':
+        if self.record_status != 'p' or self.sum_tot == None:
             return False
-        current_c_record = self.get_c_record()
         new_c_record = self.get_p_record()
-        if current_c_record and new_c_record:
-            current_c_record.record_status = 'o'
-            new_c_record.record_status = 'c'
-            current_c_record.save()
-            new_c_record.save()
-        elif not current_c_record and new_c_record:
+        if new_c_record:
             new_c_record.record_status = 'c'
             new_c_record.save()
 

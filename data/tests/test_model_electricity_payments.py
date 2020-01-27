@@ -47,6 +47,12 @@ class ElectricityPaymentsModelTest(TestCase):
             model_type="T1",
             acceptance_date=None,
         )
+        ElectricMeter.objects.create(
+            model="НЕВА-2",
+            serial_number="000000000",
+            model_type="T2",
+            acceptance_date=None,
+        )
         LandPlot.objects.create(
             plot_number="1",
             plot_area=6000,
@@ -54,7 +60,14 @@ class ElectricityPaymentsModelTest(TestCase):
             owner=Owner.objects.get(id=1),
             electric_meter=ElectricMeter.objects.get(id=1),
         )
-        cls.obj =  ElectricityPayments.objects.create(
+        LandPlot.objects.create(
+            plot_number="2",
+            plot_area=8000,
+            snt=Snt.objects.get(id=1),
+            owner=Owner.objects.get(id=1),
+            electric_meter=ElectricMeter.objects.get(id=2),
+        )
+        ElectricityPayments.objects.create(
             plot_number=LandPlot.objects.get(id=1),
             record_date=date(2020, 1, 1),
             t1_new=0,
@@ -62,20 +75,32 @@ class ElectricityPaymentsModelTest(TestCase):
         )
         ElectricityPayments.objects.filter(id=1).update(
             record_date=date(2020, 1, 1))
+        ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=2),
+            record_date=date(2020, 1, 1),
+            t1_new=0,
+            t2_new=0,
+        )
+        ElectricityPayments.objects.filter(id=2).update(
+            record_date=date(2020, 1, 1))
+        Rate.objects.create(
+            t1_rate=5.5,
+            t2_rate=2.5,
+        )
         
     # Test fields
     def test_plot_number_field(self):
-        #obj = ElectricityPayments.objects.get(id=1)
+        obj = ElectricityPayments.objects.get(id=1)
         ref_obj = LandPlot.objects.get(id=1)
-        is_null = self.obj._meta.get_field('plot_number').null
-        field_label = self.obj._meta.get_field('plot_number').verbose_name
-        help_text = self.obj._meta.get_field('plot_number').help_text
-        is_unique = self.obj._meta.get_field('plot_number').unique_for_date
+        is_null = obj._meta.get_field('plot_number').null
+        field_label = obj._meta.get_field('plot_number').verbose_name
+        help_text = obj._meta.get_field('plot_number').help_text
+        is_unique = obj._meta.get_field('plot_number').unique_for_date
         self.assertEqual(is_null, True)
         self.assertEqual(field_label, "Номер участка")
         self.assertEqual(help_text, "Номер участка")
         self.assertEqual(is_unique, "record_date")
-        self.assertEqual(self.obj.plot_number, ref_obj)
+        self.assertEqual(obj.plot_number, ref_obj)
 
     def test_record_date_field(self):
         obj = ElectricityPayments.objects.get(id=1)
@@ -275,13 +300,13 @@ class ElectricityPaymentsModelTest(TestCase):
         (i) record in db - return error (False)
         (i,n) records in db - return error (False)"""
         # Check initial state
-        self.assertEquals(self.obj.record_status, 'n')
+        obj = ElectricityPayments.objects.get(id=1)
+        self.assertEquals(obj.record_status, 'n')
         # State 1 check
-        check = self.obj.set_initial()
-        self.assertEquals(self.obj.record_status, 'i')
-        self.assertEquals(check, self.obj)
+        check = obj.set_initial()
+        self.assertEquals(obj.record_status, 'i')
         # State 2 check
-        check = self.obj.set_initial()
+        check = obj.set_initial()
         self.assertEquals(check, False)
         # State 3 check
         obj_1 =  ElectricityPayments.objects.create(
@@ -291,7 +316,7 @@ class ElectricityPaymentsModelTest(TestCase):
         )
         check = obj_1.set_initial()
         self.assertEquals(obj_1.record_status, 'n')
-        self.assertEquals(check, self.obj_1)
+        self.assertEquals(check, False)
         # Remove new entity and keep record (i)
         obj_1.delete()
 
@@ -299,41 +324,176 @@ class ElectricityPaymentsModelTest(TestCase):
         """Test get_i_record() for following states:
         (i) record in db - return i_record object
         (n) record in db - return error (False)"""
-        pass
+        obj = ElectricityPayments.objects.get(id=1)
+        # Check initial state
+        self.assertEquals(obj.record_status, 'n')
+        # State 1 check
+        obj.set_initial()
+        check = obj.get_i_record()
+        self.assertEquals(check, obj)
+        # State 2 check 
+        obj_1 =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=1),
+            t1_new=0,
+            t2_new=0,
+        )
+        check = obj_1.get_i_record()
+        self.assertEquals(check, obj)
+        # Remove obj_1
+        obj_1.delete()
 
     def test_get_n_record_function(self):
         """Test get_n_record() for following states:
         (i) record in db - return error (False)
         (i,n) records in db - return n_record object"""
-        pass
-
+        obj = ElectricityPayments.objects.get(id=1)
+        # Check initial state
+        self.assertEquals(obj.record_status, 'n')
+        # State 1 check
+        obj.set_initial()
+        check = obj.get_n_record()
+        self.assertEquals(check, False)
+        # State 2 check
+        obj_1 =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=1),
+            t1_new=0,
+            t2_new=0,
+        )
+        check = obj.get_n_record()
+        self.assertEquals(check, obj_1)
+        # Remove obj_1
+        obj_1.delete()
+ 
     def test_get_p_record_function(self):
         """Test get_p_record() for following states:
         (i) record in db - return error (False) 
-        (i,p) records in db - return p_record object"""
-        pass
+        (i,p) records in db - return p_record"""
+        obj = ElectricityPayments.objects.get(id=1)
+        # Check initial state
+        self.assertEquals(obj.record_status, 'n')
+        # State 1 check
+        obj.set_initial()
+        check = obj.get_p_record()
+        self.assertEquals(check, False)
+        # State 2 check
+        obj_1 =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=1),
+            t1_new=10,
+            t2_new=10,
+        )
+        obj_1.record_status = 'p'
+        obj_1.save()
+        check = obj.get_p_record()
+        self.assertEquals(check, obj_1)
+        # Remove obj_1
+        obj_1.delete()
 
     def test_get_c_record_function(self):
         """Test get_c_record() for following states:
         (i) record in db - return error (False)
         (i,c) records in db - return c_record
         (i,c,c..) records in db - return latest c_record object"""
-        pass
+        obj = ElectricityPayments.objects.get(id=1)
+        # Check initial state
+        self.assertEquals(obj.record_status, 'n')
+        # State 1 check
+        check = obj.get_c_record()
+        self.assertEquals(check, False)               
+        # State 2 check
+        obj_1 =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=1),
+            t1_new=0,
+            t2_new=0,
+        )
+        obj_1.record_status = 'c'
+        obj_1.save()
+        check = obj.get_c_record()
+        self.assertEquals(check, obj_1)
+        # State 3 check
+        obj_1.record_date = date(2020, 1, 2)
+        obj_1.save()
+        obj_2 =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=1),
+            t1_new=0,
+            t2_new=0,
+        )
+        obj_2.record_status = 'c'
+        obj_2.save()
+        check = obj.get_c_record()
+        self.assertEquals(check, obj_2)
+        # Remove obj_1 and obj_2
+        obj_1.delete()
+        obj_2.delete()
 
     def test_get_current_rate_function(self):
-        """Test descr."""
-        pass
+        """Test get_current_rate() for following states:
+        (c) rate in db - return current rate obj
+        (' ', c) rates in db - return latest obj"""
+        obj = Rate.objects.get(id=1)
+        obj_main = ElectricityPayments.objects.get(id=1)
+        # Check initial state
+        self.assertEquals(obj.rate_status, 'c')
+        # State 1 check
+        check = obj_main.get_current_rate()
+        self.assertEquals(check, obj)
+        # State 2 check
+        obj.intro_date = date(2020, 1, 1)
+        obj.rate_status = ''
+        obj.save()
+        obj_1 = Rate.objects.create(
+            t1_rate=8.5,
+            t2_rate=5.5,
+        )
+        check = obj_main.get_current_rate()
+        self.assertEquals(check, obj_1)
+        # Remove obj_1
+        obj_1.delete()
 
     def test_fill_n_record_function(self):
-        """Test fill_n_record() for following states:
+        """Test fill_n_record() for following states
+        (will check only logic not data filling):
+        (i) record in db - return error (False)
+        (i,n) records in db - return True 
+        (i,c,n) records in db - return True 
+        (i,p,n) records in db - return error (False)
+        (i,c,p,n) records in db - return error (False)"""
+        obj = ElectricityPayments.objects.get(id=1)
+        # Check initial state
+        self.assertEquals(obj.record_status, 'n')
+        # State 1 check
+        obj.set_initial()
+        check = obj.fill_n_record()
+        self.assertEquals(check, False)
+        # State 2 check
+        obj_1 =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=1),
+            t1_new=10,
+            t2_new=10,
+        )
+        check = obj_1.fill_n_record()
+        self.assertEquals(check, True)
+        # State 3 check
+        obj_1.record_status = 'c'
+        obj_1.record_date = date(2020, 1, 2)
+        obj_1.save()
+        obj_2 =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=1),
+            t1_new=20,
+            t2_new=20,
+        )
+        check = obj_2.fill_n_record()
+        self.assertEquals(check, True)
+        
+
+
+    def test_calculate_payment_function(self):
+        """Test calculate_payment() for following states:        
+        (i) record in db - return error (False)
         (i,n) records in db - use data from i_record object
         (i,c) records in db - use data from c_record object
         (i,c,p,n) records in db - return error (False)
         (i,p,n) records in db - return error (False)"""
-        pass
-        
-    def test_calculate_payment_function(self):
-        """Test descr."""
+ 
         pass
 
     def test_set_paid_function(self):
