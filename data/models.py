@@ -571,6 +571,8 @@ class ElectricityPayments(models.Model):
             self.t2_amount = self.t2_cons * current_rate_obj.t2_rate
             self.sum_tot = self.t1_amount + self.t2_amount
             self.save()
+        else:
+            return False # raise an error
 
     def set_paid(self):
         """Change the status of the row (db entity) from new to paid via bank
@@ -585,9 +587,7 @@ class ElectricityPayments(models.Model):
 
     def set_payment_confirmed(self):
         """Change the status of the row (db entity) from 'paid via bank' to
-        'payment confirmed' (record_status = 'p' to record_status = 'c'),
-        and previous 'payment confirmed' to 'old payment' (record_status = 'c'
-        to record_status = 'o')."""
+        'payment confirmed' (record_status = 'p' to record_status = 'c')."""
         if self.record_status != 'p' or self.sum_tot == None:
             return False
         new_c_record = self.get_p_record()

@@ -23,6 +23,7 @@ class ElectricityPaymentsModelTest(TestCase):
             middle_name='Иванович',
             last_name='Иванов',
         )
+
         Snt.objects.create(
             name='СНТ Бобровка',
             personal_acc='01234567898765432101',
@@ -33,6 +34,7 @@ class ElectricityPaymentsModelTest(TestCase):
             kpp='123456789',
             chair_man=ChairMan.objects.get(id=1),
         )
+
         Owner.objects.create(
             first_name="Сергей",
             middle_name="Сергеевич",
@@ -41,18 +43,21 @@ class ElectricityPaymentsModelTest(TestCase):
             start_owner_date=date(2020, 1, 1),
             end_owner_date=None,
         )
+
         ElectricMeter.objects.create(
             model="НЕВА",
             serial_number="123456789",
             model_type="T1",
             acceptance_date=None,
         )
+
         ElectricMeter.objects.create(
             model="НЕВА-2",
             serial_number="000000000",
             model_type="T2",
             acceptance_date=None,
         )
+
         LandPlot.objects.create(
             plot_number="1",
             plot_area=6000,
@@ -60,6 +65,7 @@ class ElectricityPaymentsModelTest(TestCase):
             owner=Owner.objects.get(id=1),
             electric_meter=ElectricMeter.objects.get(id=1),
         )
+
         LandPlot.objects.create(
             plot_number="2",
             plot_area=8000,
@@ -67,22 +73,27 @@ class ElectricityPaymentsModelTest(TestCase):
             owner=Owner.objects.get(id=1),
             electric_meter=ElectricMeter.objects.get(id=2),
         )
+
         ElectricityPayments.objects.create(
             plot_number=LandPlot.objects.get(id=1),
             record_date=date(2020, 1, 1),
             t1_new=0,
             t2_new=0,
         )
+
         ElectricityPayments.objects.filter(id=1).update(
             record_date=date(2020, 1, 1))
+        
         ElectricityPayments.objects.create(
             plot_number=LandPlot.objects.get(id=2),
             record_date=date(2020, 1, 1),
             t1_new=0,
             t2_new=0,
         )
+
         ElectricityPayments.objects.filter(id=2).update(
             record_date=date(2020, 1, 1))
+
         Rate.objects.create(
             t1_rate=5.5,
             t2_rate=2.5,
@@ -118,7 +129,7 @@ class ElectricityPaymentsModelTest(TestCase):
         help_text = obj._meta.get_field('t1_new').help_text
         self.assertEqual(field_label, "Текущее показание (день)")
         self.assertEqual(help_text, "Тариф Т1 (6:00-23:00)")
-        self.assertEqual(obj.t1_new, Decimal('0'))
+        self.assertEqual(obj.t1_new, 0)
 
     def test_t2_new_field(self):
         obj = ElectricityPayments.objects.get(id=1)
@@ -132,7 +143,7 @@ class ElectricityPaymentsModelTest(TestCase):
         self.assertEqual(is_null, True)
         self.assertEqual(is_blank, True)
         self.assertEqual(is_default, None)
-        self.assertEqual(obj.t2_new, Decimal('0'))
+        self.assertEqual(obj.t2_new, 0)
 
     def test_t1_prev_field(self):
         obj = ElectricityPayments.objects.get(id=1)
@@ -293,6 +304,7 @@ class ElectricityPaymentsModelTest(TestCase):
             ElectricityPayments._meta.unique_together,
             (('record_date', 'plot_number'),)
         )
+
     # Test model class methods
     def test_set_initial_function(self):
         """Test set_initial() for following states:
@@ -309,16 +321,14 @@ class ElectricityPaymentsModelTest(TestCase):
         check = obj.set_initial()
         self.assertEquals(check, False)
         # State 3 check
-        obj_1 =  ElectricityPayments.objects.create(
+        obj_one =  ElectricityPayments.objects.create(
             plot_number=LandPlot.objects.get(id=1),
             t1_new=0,
             t2_new=0,
         )
-        check = obj_1.set_initial()
-        self.assertEquals(obj_1.record_status, 'n')
+        check = obj_one.set_initial()
+        self.assertEquals(obj_one.record_status, 'n')
         self.assertEquals(check, False)
-        # Remove new entity and keep record (i)
-        obj_1.delete()
 
     def test_get_i_record_function(self):
         """Test get_i_record() for following states:
@@ -332,15 +342,13 @@ class ElectricityPaymentsModelTest(TestCase):
         check = obj.get_i_record()
         self.assertEquals(check, obj)
         # State 2 check 
-        obj_1 =  ElectricityPayments.objects.create(
+        obj_one =  ElectricityPayments.objects.create(
             plot_number=LandPlot.objects.get(id=1),
             t1_new=0,
             t2_new=0,
         )
-        check = obj_1.get_i_record()
+        check = obj_one.get_i_record()
         self.assertEquals(check, obj)
-        # Remove obj_1
-        obj_1.delete()
 
     def test_get_n_record_function(self):
         """Test get_n_record() for following states:
@@ -354,15 +362,13 @@ class ElectricityPaymentsModelTest(TestCase):
         check = obj.get_n_record()
         self.assertEquals(check, False)
         # State 2 check
-        obj_1 =  ElectricityPayments.objects.create(
+        obj_one =  ElectricityPayments.objects.create(
             plot_number=LandPlot.objects.get(id=1),
             t1_new=0,
             t2_new=0,
         )
         check = obj.get_n_record()
-        self.assertEquals(check, obj_1)
-        # Remove obj_1
-        obj_1.delete()
+        self.assertEquals(check, obj_one)
  
     def test_get_p_record_function(self):
         """Test get_p_record() for following states:
@@ -376,17 +382,15 @@ class ElectricityPaymentsModelTest(TestCase):
         check = obj.get_p_record()
         self.assertEquals(check, False)
         # State 2 check
-        obj_1 =  ElectricityPayments.objects.create(
+        obj_one =  ElectricityPayments.objects.create(
             plot_number=LandPlot.objects.get(id=1),
             t1_new=10,
             t2_new=10,
         )
-        obj_1.record_status = 'p'
-        obj_1.save()
+        obj_one.record_status = 'p'
+        obj_one.save()
         check = obj.get_p_record()
-        self.assertEquals(check, obj_1)
-        # Remove obj_1
-        obj_1.delete()
+        self.assertEquals(check, obj_one)
 
     def test_get_c_record_function(self):
         """Test get_c_record() for following states:
@@ -400,54 +404,49 @@ class ElectricityPaymentsModelTest(TestCase):
         check = obj.get_c_record()
         self.assertEquals(check, False)               
         # State 2 check
-        obj_1 =  ElectricityPayments.objects.create(
+        obj_one =  ElectricityPayments.objects.create(
             plot_number=LandPlot.objects.get(id=1),
             t1_new=0,
             t2_new=0,
         )
-        obj_1.record_status = 'c'
-        obj_1.save()
+        obj_one.record_status = 'c'
+        obj_one.save()
         check = obj.get_c_record()
-        self.assertEquals(check, obj_1)
+        self.assertEquals(check, obj_one)
         # State 3 check
-        obj_1.record_date = date(2020, 1, 2)
-        obj_1.save()
-        obj_2 =  ElectricityPayments.objects.create(
+        obj_one.record_date = date(2020, 1, 2)
+        obj_one.save()
+        obj_two =  ElectricityPayments.objects.create(
             plot_number=LandPlot.objects.get(id=1),
             t1_new=0,
             t2_new=0,
         )
-        obj_2.record_status = 'c'
-        obj_2.save()
+        obj_two.record_status = 'c'
+        obj_two.save()
         check = obj.get_c_record()
-        self.assertEquals(check, obj_2)
-        # Remove obj_1 and obj_2
-        obj_1.delete()
-        obj_2.delete()
+        self.assertEquals(check, obj_two)
 
     def test_get_current_rate_function(self):
         """Test get_current_rate() for following states:
         (c) rate in db - return current rate obj
         (' ', c) rates in db - return latest obj"""
-        obj = Rate.objects.get(id=1)
-        obj_main = ElectricityPayments.objects.get(id=1)
+        obj_rate = Rate.objects.get(id=1)
+        obj = ElectricityPayments.objects.get(id=1)
         # Check initial state
-        self.assertEquals(obj.rate_status, 'c')
+        self.assertEquals(obj_rate.rate_status, 'c')
         # State 1 check
-        check = obj_main.get_current_rate()
-        self.assertEquals(check, obj)
+        check = obj.get_current_rate()
+        self.assertEquals(check, obj_rate)
         # State 2 check
-        obj.intro_date = date(2020, 1, 1)
-        obj.rate_status = ''
-        obj.save()
-        obj_1 = Rate.objects.create(
+        obj_rate.intro_date = date(2020, 1, 1)
+        obj_rate.rate_status = ''
+        obj_rate.save()
+        obj_rate_one = Rate.objects.create(
             t1_rate=8.5,
             t2_rate=5.5,
         )
-        check = obj_main.get_current_rate()
-        self.assertEquals(check, obj_1)
-        # Remove obj_1
-        obj_1.delete()
+        check = obj.get_current_rate()
+        self.assertEquals(check, obj_rate_one)
 
     def test_fill_n_record_function(self):
         """Test fill_n_record() for following states
@@ -465,37 +464,155 @@ class ElectricityPaymentsModelTest(TestCase):
         check = obj.fill_n_record()
         self.assertEquals(check, False)
         # State 2 check
-        obj_1 =  ElectricityPayments.objects.create(
+        obj_one =  ElectricityPayments.objects.create(
             plot_number=LandPlot.objects.get(id=1),
             t1_new=10,
             t2_new=10,
         )
-        check = obj_1.fill_n_record()
+        check = obj_one.fill_n_record()
         self.assertEquals(check, True)
         # State 3 check
-        obj_1.record_status = 'c'
-        obj_1.record_date = date(2020, 1, 2)
-        obj_1.save()
-        obj_2 =  ElectricityPayments.objects.create(
+        obj_one.record_status = 'c'
+        obj_one.record_date = date(2020, 1, 2)
+        obj_one.save()
+        obj_two =  ElectricityPayments.objects.create(
             plot_number=LandPlot.objects.get(id=1),
             t1_new=20,
             t2_new=20,
         )
-        check = obj_2.fill_n_record()
+        check = obj_two.fill_n_record()
         self.assertEquals(check, True)
-        
-
 
     def test_calculate_payment_function(self):
         """Test calculate_payment() for following states:        
         (i) record in db - return error (False)
         (i,n) records in db - use data from i_record object
-        (i,c) records in db - use data from c_record object
+        (i,c,n) records in db - use data from c_record object
+        (i,c,n) and no current rate - return error (False)
         (i,c,p,n) records in db - return error (False)
         (i,p,n) records in db - return error (False)"""
- 
-        pass
-
+        obj_t1 = ElectricityPayments.objects.get(id=1)
+        obj_t2 = ElectricityPayments.objects.get(id=2)
+        # Check initial state (T1 and T2)
+        self.assertEquals(obj_t1.record_status, 'n')
+        self.assertEquals(obj_t2.record_status, 'n')
+        # State 1 check (T1 and T2)
+        obj_t1.set_initial()
+        obj_t2.set_initial()
+        check = obj_t1.calculate_payment()
+        self.assertEquals(check, False)
+        check = obj_t2.calculate_payment()
+        self.assertEquals(check, False)
+        # State 2 check (T1 and T2)
+        # T1
+        obj_t1_one =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=1),
+            t1_new=10,
+            t2_new=10,
+        )
+        obj_t1_one.calculate_payment()
+        self.assertEquals(obj_t1_one.t1_new, 10)
+        self.assertEquals(obj_t1_one.t2_new, None)
+        self.assertEquals(obj_t1_one.t1_prev, 0)
+        self.assertEquals(obj_t1_one.t2_prev, None)
+        self.assertEquals(obj_t1_one.t1_cons, 10)
+        self.assertEquals(obj_t1_one.t2_cons, None)
+        self.assertEquals(obj_t1_one.t1_amount, 55.00)
+        self.assertEquals(obj_t1_one.t2_amount, None)
+        self.assertEquals(obj_t1_one.sum_tot, 55.00)
+        # T2
+        obj_t2_one =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=2),
+            t1_new=10,
+            t2_new=10,
+        )
+        obj_t2_one.calculate_payment()
+        self.assertEquals(obj_t2_one.t1_new, 10)
+        self.assertEquals(obj_t2_one.t2_new, 10)
+        self.assertEquals(obj_t2_one.t1_prev, 0)
+        self.assertEquals(obj_t2_one.t2_prev, 0)
+        self.assertEquals(obj_t2_one.t1_cons, 10)
+        self.assertEquals(obj_t2_one.t2_cons, 10)
+        self.assertEquals(obj_t2_one.t1_amount, 55.00)
+        self.assertEquals(obj_t2_one.t2_amount, 25.00)
+        self.assertEquals(obj_t2_one.sum_tot, 80.00)
+        # State 3 check prepare (T1 and T2)
+        obj_t1_one.record_status = 'c'
+        obj_t1_one.record_date = date(2020, 1, 2)
+        obj_t1_one.save()
+        obj_t2_one.record_status = 'c'
+        obj_t2_one.record_date = date(2020, 1, 2)
+        obj_t2_one.save()
+        obj_t1_two =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=1),
+            t1_new=30,
+            t2_new=30,
+        )
+        obj_t2_two =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=2),
+            t1_new=30,
+            t2_new=30,
+        )
+        # State 3 (T1) check
+        obj_t1_two.calculate_payment()
+        self.assertEquals(obj_t1_two.t1_new, 30)
+        self.assertEquals(obj_t1_two.t2_new, None)
+        self.assertEquals(obj_t1_two.t1_prev, 10)
+        self.assertEquals(obj_t1_two.t2_prev, None)
+        self.assertEquals(obj_t1_two.t1_cons, 20)
+        self.assertEquals(obj_t1_two.t2_cons, None)
+        self.assertEquals(obj_t1_two.t1_amount, 110.00)
+        self.assertEquals(obj_t1_two.t2_amount, None)
+        self.assertEquals(obj_t1_two.sum_tot, 110.00)
+        # State 3 (T2) check
+        obj_t2_two.calculate_payment()
+        self.assertEquals(obj_t2_two.t1_new, 30)
+        self.assertEquals(obj_t2_two.t2_new, 30)
+        self.assertEquals(obj_t2_two.t1_prev, 10)
+        self.assertEquals(obj_t2_two.t2_prev, 10)
+        self.assertEquals(obj_t2_two.t1_cons, 20)
+        self.assertEquals(obj_t2_two.t2_cons, 20)
+        self.assertEquals(obj_t2_two.t1_amount, 110.00)
+        self.assertEquals(obj_t2_two.t2_amount, 50.00)
+        self.assertEquals(obj_t2_two.sum_tot, 160.00)
+        # State 4 check (T1 and T2)
+        obj_rate = Rate.objects.get(id=1)
+        obj_rate.rate_status = None
+        obj_rate.save()
+        check = obj_t1_two.calculate_payment()
+        self.assertEquals(check, False)
+        check = obj_t2_two.calculate_payment()
+        self.assertEquals(check, False)
+        # State 5 check prepare (T1 and T2)
+        obj_t1_two.record_status = 'p'
+        obj_t1_two.record_date = date(2020, 1, 3)
+        obj_t1_two.save()
+        obj_t2_two.record_status = 'p'
+        obj_t2_two.record_date = date(2020, 1, 3)
+        obj_t2_two.save() 
+        obj_t1_three =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=1),
+            t1_new=40,
+            t2_new=40,
+        )
+        obj_t2_three =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=2),
+            t1_new=40,
+            t2_new=40,
+        )
+        # State 5 check (T1 and T2) 
+        check = obj_t1_three.calculate_payment()
+        self.assertEquals(check, False)
+        check = obj_t2_three.calculate_payment()
+        self.assertEquals(check, False)
+        # State 6 check(T1 and T2) 
+        obj_t1_one.delete()
+        check = obj_t1_three.calculate_payment()
+        self.assertEquals(check, False)
+        obj_t2_one.delete()
+        check = obj_t2_three.calculate_payment()
+        self.assertEquals(check, False)
+        
     def test_set_paid_function(self):
         """Test descr."""
         pass
