@@ -594,11 +594,14 @@ class ElectricityPayments(models.Model):
         'payment confirmed' (record_status = 'p' to record_status = 'c')."""
         if self.record_status != 'p':
             return False
-        elif self.sum_tot == None:
+        elif self.sum_tot != None:
+            if self.sum_tot > 0:
+                self.record_status = 'c'
+                self.save()
+            else:
+                return False
+        else:
             return False
-        if new_c_record:
-            self.record_status = 'c'
-            self.save()
 
 class Rate(models.Model):
     """Model representing snt rates to calculate 
