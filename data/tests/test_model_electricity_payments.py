@@ -312,120 +312,200 @@ class ElectricityPaymentsModelTest(TestCase):
         (i) record in db - return error (False)
         (i,n) records in db - return error (False)"""
         # Check initial state
-        obj = ElectricityPayments.objects.get(id=1)
-        self.assertEquals(obj.record_status, 'n')
+        obj_t1 = ElectricityPayments.objects.get(id=1)
+        self.assertEquals(obj_t1.record_status, 'n')
+        obj_t2 = ElectricityPayments.objects.get(id=2)
+        self.assertEquals(obj_t2.record_status, 'n')
         # State 1 check
-        check = obj.set_initial()
-        self.assertEquals(obj.record_status, 'i')
+        check = obj_t1.set_initial()
+        self.assertEquals(obj_t1.record_status, 'i')
+        check = obj_t2.set_initial()
+        self.assertEquals(obj_t2.record_status, 'i')
         # State 2 check
-        check = obj.set_initial()
+        check = obj_t1.set_initial()
+        self.assertEquals(check, False)
+        check = obj_t2.set_initial()
         self.assertEquals(check, False)
         # State 3 check
-        obj_one =  ElectricityPayments.objects.create(
+        obj_t1_one =  ElectricityPayments.objects.create(
             plot_number=LandPlot.objects.get(id=1),
             t1_new=0,
             t2_new=0,
         )
-        check = obj_one.set_initial()
-        self.assertEquals(obj_one.record_status, 'n')
+        check = obj_t1_one.set_initial()
+        self.assertEquals(obj_t1_one.record_status, 'n')
+        self.assertEquals(check, False)
+        obj_t2_one =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=2),
+            t1_new=0,
+            t2_new=0,
+        )
+        check = obj_t2_one.set_initial()
+        self.assertEquals(obj_t2_one.record_status, 'n')
         self.assertEquals(check, False)
 
     def test_get_i_record_function(self):
         """Test get_i_record() for following states:
         (i) record in db - return i_record object
         (n) record in db - return error (False)"""
-        obj = ElectricityPayments.objects.get(id=1)
+        obj_t1 = ElectricityPayments.objects.get(id=1)
+        obj_t2 = ElectricityPayments.objects.get(id=2)
         # Check initial state
-        self.assertEquals(obj.record_status, 'n')
+        self.assertEquals(obj_t1.record_status, 'n')
+        self.assertEquals(obj_t2.record_status, 'n')
         # State 1 check
-        obj.set_initial()
-        check = obj.get_i_record()
-        self.assertEquals(check, obj)
+        obj_t1.set_initial()
+        check = obj_t1.get_i_record()
+        self.assertEquals(check, obj_t1)
+        obj_t2.set_initial()
+        check = obj_t2.get_i_record()
+        self.assertEquals(check, obj_t2)
         # State 2 check 
-        obj_one =  ElectricityPayments.objects.create(
+        obj_t1_one =  ElectricityPayments.objects.create(
             plot_number=LandPlot.objects.get(id=1),
             t1_new=0,
             t2_new=0,
         )
-        check = obj_one.get_i_record()
-        self.assertEquals(check, obj)
+        check = obj_t1_one.get_i_record()
+        self.assertEquals(check, obj_t1)
+        obj_t2_one =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=2),
+            t1_new=0,
+            t2_new=0,
+        )
+        check = obj_t2_one.get_i_record()
+        self.assertEquals(check, obj_t2)
 
     def test_get_n_record_function(self):
         """Test get_n_record() for following states:
         (i) record in db - return error (False)
         (i,n) records in db - return n_record object"""
-        obj = ElectricityPayments.objects.get(id=1)
+        obj_t1 = ElectricityPayments.objects.get(id=1)
+        obj_t2 = ElectricityPayments.objects.get(id=2)
         # Check initial state
-        self.assertEquals(obj.record_status, 'n')
+        self.assertEquals(obj_t1.record_status, 'n')
+        self.assertEquals(obj_t2.record_status, 'n')
         # State 1 check
-        obj.set_initial()
-        check = obj.get_n_record()
+        obj_t1.set_initial()
+        check = obj_t1.get_n_record()
+        self.assertEquals(check, False)
+        obj_t2.set_initial()
+        check = obj_t2.get_n_record()
         self.assertEquals(check, False)
         # State 2 check
-        obj_one =  ElectricityPayments.objects.create(
+        obj_t1_one =  ElectricityPayments.objects.create(
             plot_number=LandPlot.objects.get(id=1),
             t1_new=0,
             t2_new=0,
         )
-        check = obj.get_n_record()
-        self.assertEquals(check, obj_one)
+        check = obj_t1.get_n_record()
+        self.assertEquals(check, obj_t1_one)
+        obj_t2_one =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=2),
+            t1_new=0,
+            t2_new=0,
+        )
+        check = obj_t2.get_n_record()
+        self.assertEquals(check, obj_t2_one)
  
     def test_get_p_record_function(self):
         """Test get_p_record() for following states:
         (i) record in db - return error (False) 
         (i,p) records in db - return p_record"""
-        obj = ElectricityPayments.objects.get(id=1)
+        obj_t1 = ElectricityPayments.objects.get(id=1)
+        obj_t2 = ElectricityPayments.objects.get(id=2)
         # Check initial state
-        self.assertEquals(obj.record_status, 'n')
+        self.assertEquals(obj_t1.record_status, 'n')
+        self.assertEquals(obj_t2.record_status, 'n')
         # State 1 check
-        obj.set_initial()
-        check = obj.get_p_record()
+        obj_t1.set_initial()
+        check = obj_t1.get_p_record()
+        self.assertEquals(check, False)
+        obj_t2.set_initial()
+        check = obj_t2.get_p_record()
         self.assertEquals(check, False)
         # State 2 check
-        obj_one =  ElectricityPayments.objects.create(
+        obj_t1_one =  ElectricityPayments.objects.create(
             plot_number=LandPlot.objects.get(id=1),
             t1_new=10,
             t2_new=10,
         )
-        obj_one.record_status = 'p'
-        obj_one.save()
-        check = obj.get_p_record()
-        self.assertEquals(check, obj_one)
+        obj_t1_one.record_status = 'p'
+        obj_t1_one.save()
+        check = obj_t1.get_p_record()
+        self.assertEquals(check, obj_t1_one)
+        obj_t2_one =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=2),
+            t1_new=10,
+            t2_new=10,
+        )
+        obj_t2_one.record_status = 'p'
+        obj_t2_one.save()
+        check = obj_t2.get_p_record()
+        self.assertEquals(check, obj_t2_one)
 
     def test_get_c_record_function(self):
         """Test get_c_record() for following states:
         (i) record in db - return error (False)
         (i,c) records in db - return c_record
         (i,c,c..) records in db - return latest c_record object"""
-        obj = ElectricityPayments.objects.get(id=1)
+        obj_t1 = ElectricityPayments.objects.get(id=1)
+        obj_t2 = ElectricityPayments.objects.get(id=2)
         # Check initial state
-        self.assertEquals(obj.record_status, 'n')
-        # State 1 check
-        check = obj.get_c_record()
+        self.assertEquals(obj_t1.record_status, 'n')
+        self.assertEquals(obj_t2.record_status, 'n')
+        # State 1 check (T1 and T2)
+        check = obj_t1.get_c_record()
         self.assertEquals(check, False)               
-        # State 2 check
-        obj_one =  ElectricityPayments.objects.create(
+        check = obj_t2.get_c_record()
+        self.assertEquals(check, False)               
+        # State 2 check (T1 and T2)
+        # T1
+        obj_t1_one =  ElectricityPayments.objects.create(
             plot_number=LandPlot.objects.get(id=1),
             t1_new=0,
             t2_new=0,
         )
-        obj_one.record_status = 'c'
-        obj_one.save()
-        check = obj.get_c_record()
-        self.assertEquals(check, obj_one)
-        # State 3 check
-        obj_one.record_date = date(2020, 1, 2)
-        obj_one.save()
-        obj_two =  ElectricityPayments.objects.create(
+        obj_t1_one.record_status = 'c'
+        obj_t1_one.save()
+        check = obj_t1.get_c_record()
+        self.assertEquals(check, obj_t1_one)
+        # T2
+        obj_t2_one =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=2),
+            t1_new=0,
+            t2_new=0,
+        )
+        obj_t2_one.record_status = 'c'
+        obj_t2_one.save()
+        check = obj_t2.get_c_record()
+        self.assertEquals(check, obj_t2_one)
+        # State 3 check (T1 and T2)
+        # T1
+        obj_t1_one.record_date = date(2020, 1, 2)
+        obj_t1_one.save()
+        obj_t1_two =  ElectricityPayments.objects.create(
             plot_number=LandPlot.objects.get(id=1),
             t1_new=0,
             t2_new=0,
         )
-        obj_two.record_status = 'c'
-        obj_two.save()
-        check = obj.get_c_record()
-        self.assertEquals(check, obj_two)
-
+        obj_t1_two.record_status = 'c'
+        obj_t1_two.save()
+        check = obj_t1.get_c_record()
+        self.assertEquals(check, obj_t1_two)
+        # T2
+        obj_t2_one.record_date = date(2020, 1, 2)
+        obj_t2_one.save()
+        obj_t2_two =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=2),
+            t1_new=0,
+            t2_new=0,
+        )
+        obj_t2_two.record_status = 'c'
+        obj_t2_two.save()
+        check = obj_t2.get_c_record()
+        self.assertEquals(check, obj_t2_two)
+ 
     def test_get_current_rate_function(self):
         """Test get_current_rate() for following states:
         (c) rate in db - return current rate obj
@@ -768,3 +848,4 @@ class ElectricityPaymentsModelTest(TestCase):
         obj_t2_one.save()
         check = obj_t2_one.set_payment_confirmed()
         self.assertEquals(check, False)
+
