@@ -614,9 +614,87 @@ class ElectricityPaymentsModelTest(TestCase):
         self.assertEquals(check, False)
         
     def test_set_paid_function(self):
-        """Test descr."""
-        pass
-
+        """Test set_paid() for following states:
+        (n) record in db - return error (False)
+        (i) record in db - return error (False)
+        (i,n) records in db(not calculated) - return error (False)
+        (i,n) records in db(calculated sum_tot=0) - return error(False) 
+        (i,n) records in db(calculated) - change record_status to 'p'
+        (i,p) records in db - return error (False)
+        (i,c) records in db - return error (Fasle)"""
+        obj_t1 = ElectricityPayments.objects.get(id=1)
+        obj_t2 = ElectricityPayments.objects.get(id=2)
+        # Check initial state (T1 and T2)
+        self.assertEquals(obj_t1.record_status, 'n')
+        self.assertEquals(obj_t2.record_status, 'n')
+        # State 1 check
+        check = obj_t1.set_paid()
+        self.assertEquals(obj_t1.record_status, 'n')
+        self.assertEquals(check, False)
+        check = obj_t2.set_paid()
+        self.assertEquals(obj_t2.record_status, 'n')
+        self.assertEquals(check, False)
+        # State 2 check
+        obj_t1.set_initial()
+        obj_t2.set_initial()
+        check = obj_t1.set_paid()
+        self.assertEquals(obj_t1.record_status, 'i')
+        self.assertEquals(check, False)
+        check = obj_t2.set_paid()
+        self.assertEquals(obj_t2.record_status, 'i')
+        self.assertEquals(check, False)
+        # State 3 check
+        obj_t1_one =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=1),
+            t1_new=10,
+            t2_new=10,
+        )
+        obj_t2_one =  ElectricityPayments.objects.create(
+            plot_number=LandPlot.objects.get(id=2),
+            t1_new=10,
+            t2_new=10,
+        )
+        check = obj_t1_one.set_paid()
+        self.assertEquals(obj_t1_one.record_status, 'n')
+        self.assertEquals(check, False)
+        check = obj_t2_one.set_paid()
+        self.assertEquals(obj_t2_one.record_status, 'n')
+        self.assertEquals(check, False)
+        # State 4 check
+        obj_t1_one.sum_tot = 0
+        obj_t1_one.save()
+        check = obj_t1_one.set_paid()
+        self.assertEquals(obj_t1_one.record_status, 'n')
+        self.assertEquals(check, False)
+        obj_t2_one.sum_tot = 0
+        obj_t2_one.save()
+        check = obj_t2_one.set_paid()
+        self.assertEquals(obj_t2_one.record_status, 'n')
+        self.assertEquals(check, False)
+        # State 5 check
+        obj_t1_one.calculate_payment()
+        obj_t2_one.calculate_payment()
+        obj_t1_one.set_paid()
+        self.assertEquals(obj_t1_one.record_status, 'p')
+        self.assertEquals(obj_t1_one.pay_date, date.today())
+        obj_t2_one.set_paid()
+        self.assertEquals(obj_t2_one.record_status, 'p')
+        self.assertEquals(obj_t2_one.pay_date, date.today())
+        # State 6 check
+        obj_t1_one.record_status = 'p'
+        check = obj_t1_one.set_paid()
+        self.assertEquals(check, False)
+        obj_t2_one.record_status = 'p'
+        check = obj_t2_one.set_paid()
+        self.assertEquals(check, False)
+        # State 7 check
+        obj_t1_one.record_status = 'c'
+        check = obj_t1_one.set_paid()
+        self.assertEquals(check, False)
+        obj_t2_one.record_status = 'c'
+        check = obj_t2_one.set_paid()
+        self.assertEquals(check, False)
+ 
     def test_set_payment_confirmed_function(self):
         """Test descr."""
         pass

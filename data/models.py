@@ -579,21 +579,26 @@ class ElectricityPayments(models.Model):
         (record_status = 'n' change to record_status = 'p')"""
         if self.record_status != 'n':
             return False
-        new_p_record = self.get_n_record()
-        if new_p_record and new_p_record.sum_tot > 0:
-            new_p_record.record_status = 'p'
-            new_p_record.pay_date = date.today()
-            new_p_record.save()
+        elif self.sum_tot != None:
+            if self.sum_tot > 0:
+                self.record_status = 'p'
+                self.pay_date = date.today()
+                self.save()
+            else:
+                return False
+        else:
+            return False
 
     def set_payment_confirmed(self):
         """Change the status of the row (db entity) from 'paid via bank' to
         'payment confirmed' (record_status = 'p' to record_status = 'c')."""
-        if self.record_status != 'p' or self.sum_tot == None:
+        if self.record_status != 'p':
             return False
-        new_c_record = self.get_p_record()
+        elif self.sum_tot == None:
+            return False
         if new_c_record:
-            new_c_record.record_status = 'c'
-            new_c_record.save()
+            self.record_status = 'c'
+            self.save()
 
 class Rate(models.Model):
     """Model representing snt rates to calculate 
