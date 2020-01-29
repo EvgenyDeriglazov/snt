@@ -75,11 +75,24 @@ class DateValidatorsTest(TestCase):
         validate_9_length(value)
  
     def test_validate_human_names_function(self):
-        self.assertRaises(ValidationError, validate_human_names, '111')
-        self.assertRaisesRegex(
-            ValidationError,
-            "['Можно использовать только русские символы']",
-            validate_human_names,
-            '111',
-        )
+        value = ""
+        for i in range(1040):
+            value = chr(i)
+            self.assertRaises(ValidationError, validate_human_names, value)
+            self.assertRaisesRegex(
+                ValidationError,
+                "['Можно использовать только русские символы']",
+                validate_human_names,
+                value,
+            )
+        value = ""
+        for i in range(1104, 1279):
+            value = chr(i)
+            self.assertRaises(ValidationError, validate_human_names, value)
+            self.assertRaisesRegex(
+                ValidationError,
+                "['Можно использовать только русские символы']",
+                validate_human_names,
+                value,
+            )
  
