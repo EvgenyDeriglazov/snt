@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
+from django.contrib.auth.models import User
+from data.models import Snt, LandPlot
 import datetime
 
 # Create your views here.
@@ -8,3 +10,18 @@ def homepage(request):
     now = now.strftime("%d/%m/%Y")
     html = "<html><body>It is now %s.</body></html>" %now
     return HttpResponse(html)
+
+def homepage2(request):
+    """View function for home page of site"""
+    num_snt = Snt.objects.all().count
+    num_land_plots = LandPlot.objects.all().count
+    num_users = User.objects.filter(groups__name__exact='Users').count()
+    
+    context = {
+        'num_snt': num_snt,
+        'num_land_plots': num_land_plots,
+        'num_users': num_users,
+    }
+    
+    return render(request, 'index.html', context=context)
+

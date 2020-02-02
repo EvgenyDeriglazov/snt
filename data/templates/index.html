@@ -1,0 +1,13 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <h1>СНТ</h1>
+  <p>Добро пожаловать на сайт разработанный <em>z@rg systems</em>!</p>
+  <h2>Dynamic content</h2>
+  <p>С нами уже работают:</p>
+  <ul>
+    <li><strong>СНТ:</strong> {{ num_snt }}</li>
+    <li><strong>Участки:</strong> {{ num_land_plots }}</li>
+    <li><strong>Пользователи:</strong> {{ num_users }}</li>
+  </ul>
+{% endblock %}
