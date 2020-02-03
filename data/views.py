@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.contrib.auth.models import User
-from data.models import Snt, LandPlot
+from data.models import Snt, LandPlot, ElectricityPayments
+from django.views import generic
 import datetime
 
 # Create your views here.
@@ -25,3 +26,7 @@ def homepage2(request):
     
     return render(request, 'index.html', context=context)
 
+class ElectricityPaymentsListView(generic.ListView):
+    model = ElectricityPayments
+    context_object_name = 'payments'
+    template_name = 'data/payments.html'

@@ -1,0 +1,16 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <h1>Список платежей</h1>
+  {% if payments %}
+  <ul>
+    {% for payment in payments %}
+      <li>
+        <a href="">Участок {{ payment.plot_number }} </a> {{ payment.record_date }} {{ payment.get_record_status_display }} {{ payment.sum_tot }} 
+      </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+    <p>There are no books in the library.</p>
+  {% endif %}
+{% endblock %}
