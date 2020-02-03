@@ -22,6 +22,7 @@ urlpatterns = [
     path('', include('data.urls')),
     path('admin/', admin.site.urls),
     path('data/', include('data.urls')),
+    path('accounts/', include('django.contrib.auth.urls')),
 ]
 
 # Use static() to add url mapping to serve static files during development (only)
