@@ -10,12 +10,14 @@
   		<tr>
   			<td>Номер участка</td>
   			<td>Дата показаний</td>
+  			<td>Статус</td>
   			<td>Сумма оплаты</td>
   		</tr>
 	  	{% for payment in payments %}
 	  	<tr>
   			<td> {{ payment.plot_number }} </td>
   			<td> {{ payment.record_date }} </td>
+  			<td> {{ payment.get_record_status_display }} </td>
   			<td> {{ payment.sum_tot }} </td>
   		</tr>
 	  	{% endfor %}
