@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.contrib.auth.models import User
 from data.models import Snt, LandPlot, ElectricityPayments
 from django.views import generic
+from django.contrib.auth.decorators import login_required
 import datetime
 
 # Create your views here.
@@ -30,3 +31,14 @@ class ElectricityPaymentsListView(generic.ListView):
     model = ElectricityPayments
     context_object_name = 'payments'
     template_name = 'data/payments.html'
+
+@login_required
+def user_payments_view(request):
+    """View function for user payments page."""
+    payments = ElectricityPayments.objects.all()
+
+    context = {
+        'payments': payments,
+        }
+    
+    return render(request, 'user_payments.html', context=context)

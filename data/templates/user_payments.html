@@ -1,0 +1,24 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <h1>СНТ</h1>
+  <p>Добро пожаловать на сайт разработанный <em>z@rg systems</em>!</p>
+  <h2>Динамический контент.</h2>
+  <p>Данные оплаты за электроэнергию.</p>
+  {% if payments %}
+  	<table>
+  		<tr>
+  			<td>Номер участка</td>
+  			<td>Дата показаний</td>
+  			<td>Сумма оплаты</td>
+  		</tr>
+	  	{% for payment in payments %}
+	  	<tr>
+  			<td> {{ payment.plot_number }} </td>
+  			<td> {{ payment.record_date }} </td>
+  			<td> {{ payment.sum_tot }} </td>
+  		</tr>
+	  	{% endfor %}
+	</table>
+  {% endif %}
+{% endblock %}

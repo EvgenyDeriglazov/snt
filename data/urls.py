@@ -9,5 +9,6 @@ urlpatterns = [
         views.ElectricityPaymentsListView.as_view(),
         name='payments'
         ),
+    path('user-payments/', views.user_payments_view, name='user-payments'),
 
 ]

@@ -16,7 +16,7 @@
       {% block sidebar %}
         <ul class="sidebar-nav">
           <li><a href="{% url 'homepage' %}">Home</a></li>
-          <li><a href="">All books</a></li>
+          <li><a href="{% url 'user-payments' %}">Оплата за электроэнергию</a></li>
           <li><a href="">All authors</a></li>
           {% if user.is_authenticated %}
           <li>User: {{ user.get_username }}</li>
