@@ -1,7 +1,8 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
-from django.contrib.auth import get_user_model
+#from django.contrib.auth import get_user_model
+from django.contrib.auth.models import User
 from datetime import date
 from django.db.models import Q
 from django.urls import reverse
@@ -121,33 +122,41 @@ class LandPlot(models.Model):
         max_length=10,
         help_text="Номер участка",
         unique=True,
-    )
+        )
     plot_area = models.PositiveIntegerField(
         "Размер участка",
         help_text="Единица измерения кв.м",
-    )
+        )
     snt = models.ForeignKey(
        Snt,
        on_delete=models.SET_NULL,
        null=True,
        verbose_name="СНТ",
        help_text="Расположен в СНТ",
-    ) 
+       ) 
     owner = models.ForeignKey(
         'Owner',
         on_delete=models.SET_NULL,
         null=True,
         verbose_name="владелец участка",
         help_text="Владелец участка",
-    )   
+        )   
     electric_meter = models.OneToOneField(
         'ElectricMeter',
         on_delete=models.SET_NULL,
         null=True,
         verbose_name='Счетчик',
         help_text="Данные прибора учета электроэнергии",
-    )
-
+        )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Логин",
+        help_text="Аккаунт пользователя на сайте",
+        )
+    
     class Meta:
         verbose_name = "участок"
         verbose_name_plural = "участки"

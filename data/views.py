@@ -35,10 +35,17 @@ class ElectricityPaymentsListView(generic.ListView):
 @login_required
 def user_payments_view(request):
     """View function for user payments page."""
-    payments = ElectricityPayments.objects.all()
-
-    context = {
-        'payments': payments,
-        }
+    context = {}
+    current_user = request.user
+    land_plot_query_set = current_user.landplot_set.all() 
+    if len(land_plot_query_set) == 1:
+        plot = land_plot_query_set[0]
+        context['plot'] = plot
+        payments = ElectricityPayments.objects.filter(
+            plot_number__exact=plot
+            ).order_by('-record_date')
+        context['payments'] = payments
+    elif len(land_plot_query_set) > 1:
+        context['plot_list'] = land_plot_query_set
     
     return render(request, 'user_payments.html', context=context)

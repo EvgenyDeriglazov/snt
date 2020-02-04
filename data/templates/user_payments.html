@@ -4,21 +4,30 @@
   <h1>СНТ</h1>
   <p>Добро пожаловать на сайт разработанный <em>z@rg systems</em>!</p>
   <h2>Динамический контент.</h2>
-  <p>Данные оплаты за электроэнергию.</p>
+  <p>Данные оплаты за электроэнергию в СНТ "{{ plot.snt }}".</p>
+  {% if plot %}
+  <p>Участок номер {{ plot.plot_number }}</p>
+  {% endif %}
   {% if payments %}
   	<table>
   		<tr>
-  			<td>Номер участка</td>
-  			<td>Дата показаний</td>
-  			<td>Статус</td>
-  			<td>Сумма оплаты</td>
+  			<td> Дата показаний </td>
+  			<td> Статус </td>
+            <td> День(квт/ч) </td>
+            <td> Ночь(квт/ч) </td>
+            <td> Сумма день </td>
+            <td> Сумма ночь </td>
+  			<td> Итого </td>
   		</tr>
 	  	{% for payment in payments %}
 	  	<tr>
-  			<td> {{ payment.plot_number }} </td>
   			<td> {{ payment.record_date }} </td>
   			<td> {{ payment.get_record_status_display }} </td>
-  			<td> {{ payment.sum_tot }} </td>
+  			<td> {{ payment.t1_cons }} </td>
+  			<td> {{ payment.t2_cons }} </td>
+  			<td> {{ payment.t1_amount }} р.</td>
+  			<td> {{ payment.t2_amount }} р.</td>
+  			<td> {{ payment.sum_tot }} р.</td>
   		</tr>
 	  	{% endfor %}
 	</table>
