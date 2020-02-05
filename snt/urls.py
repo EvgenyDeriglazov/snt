@@ -17,11 +17,12 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
+from data.views import homepage
 
 urlpatterns = [
     path('', include('data.urls')),
+    path('', homepage, name='homepage'),
     path('admin/', admin.site.urls),
-    path('data/', include('data.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
 ]
 

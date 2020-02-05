@@ -8,12 +8,6 @@ import datetime
 
 # Create your views here.
 def homepage(request):
-    now = datetime.datetime.now()
-    now = now.strftime("%d/%m/%Y")
-    html = "<html><body>It is now %s.</body></html>" %now
-    return HttpResponse(html)
-
-def homepage2(request):
     """View function for home page of site"""
     num_snt = Snt.objects.all().count
     num_land_plots = LandPlot.objects.all().count
@@ -40,12 +34,21 @@ def user_payments_view(request):
     land_plot_query_set = current_user.landplot_set.all() 
     if len(land_plot_query_set) == 1:
         plot = land_plot_query_set[0]
+        context['snt_name'] = plot.snt
         context['plot'] = plot
-        payments = ElectricityPayments.objects.filter(
+        payments_list = ElectricityPayments.objects.filter(
             plot_number__exact=plot
             ).order_by('-record_date')
-        context['payments'] = payments
+        context['payments_list'] = payments_list
     elif len(land_plot_query_set) > 1:
-        context['plot_list'] = land_plot_query_set
-    
+        payments_consolidated_list = []
+        context['snt_name'] = land_plot_query_set[0].snt
+        for plot in land_plot_query_set:
+            payments_list = ElectricityPayments.objects.filter(
+                plot_number__exact=plot
+                ).order_by('-record_date')
+            for item in payments_list:
+                    payments_consolidated_list.append(item)
+        context['payments_consolidated_list'] = payments_consolidated_list
+                
     return render(request, 'user_payments.html', context=context)

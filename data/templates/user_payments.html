@@ -2,34 +2,59 @@
 
 {% block content %}
   <h1>СНТ</h1>
-  <p>Добро пожаловать на сайт разработанный <em>z@rg systems</em>!</p>
-  <h2>Динамический контент.</h2>
-  <p>Данные оплаты за электроэнергию в СНТ "{{ plot.snt }}".</p>
-  {% if plot %}
-  <p>Участок номер {{ plot.plot_number }}</p>
-  {% endif %}
-  {% if payments %}
-  	<table>
-  		<tr>
-  			<td> Дата показаний </td>
-  			<td> Статус </td>
-            <td> День(квт/ч) </td>
-            <td> Ночь(квт/ч) </td>
-            <td> Сумма день </td>
-            <td> Сумма ночь </td>
-  			<td> Итого </td>
-  		</tr>
-	  	{% for payment in payments %}
-	  	<tr>
-  			<td> {{ payment.record_date }} </td>
-  			<td> {{ payment.get_record_status_display }} </td>
-  			<td> {{ payment.t1_cons }} </td>
-  			<td> {{ payment.t2_cons }} </td>
-  			<td> {{ payment.t1_amount }} р.</td>
-  			<td> {{ payment.t2_amount }} р.</td>
-  			<td> {{ payment.sum_tot }} р.</td>
-  		</tr>
-	  	{% endfor %}
-	</table>
-  {% endif %}
+    <p>Добро пожаловать на сайт разработанный <em>z@rg systems</em>!</p>
+        <p>Данные оплаты за электроэнергию в СНТ "{{ snt_name }}".</p>
+            {% if plot %}
+                <p>Данные участка номер {{ plot.plot_number }}</p>
+                {% if payments_list %}
+  	                <table>
+  		                <tr>
+  			            <td> Дата показаний </td>
+  			            <td> Статус </td>
+                        <td> День(квт/ч) </td>
+                        <td> Ночь(квт/ч) </td>
+                        <td> Сумма день </td>
+                        <td> Сумма ночь </td>
+  			            <td> Итого </td>
+  		                </tr>
+	  	            {% for payment in payments_list %}
+	  	                <tr>
+  			            <td> {{ payment.record_date }} </td>
+  			            <td> {{ payment.get_record_status_display }} </td>
+  			            <td> {{ payment.t1_cons }} </td>
+  			            <td> {{ payment.t2_cons }} </td>
+  			            <td> {{ payment.t1_amount }} р.</td>
+  			            <td> {{ payment.t2_amount }} р.</td>
+  			            <td> {{ payment.sum_tot }} р.</td>
+  		                </tr>
+	  	            {% endfor %}
+	                </table>
+                {% endif %}
+            {% elif payments_consolidated_list %}
+                <p>Данные ваших участков</p>
+                <table>
+   		            <tr>
+  			        <td> Номер участка </td>
+  			        <td> Дата показаний </td>
+  			        <td> Статус </td>
+                    <td> День(квт/ч) </td>
+                    <td> Ночь(квт/ч) </td>
+                    <td> Сумма день </td>
+                    <td> Сумма ночь </td>
+  			        <td> Итого </td>
+  		            </tr>
+	            {% for payment in payments_consolidated_list %}
+	  	            <tr>
+  			        <td> {{ payment.plot_number }} </td>
+  			        <td> {{ payment.record_date }} </td>
+  			        <td> {{ payment.get_record_status_display }} </td>
+  			        <td> {{ payment.t1_cons }} </td>
+  			        <td> {{ payment.t2_cons }} </td>
+  			        <td> {{ payment.t1_amount }} р.</td>
+  			        <td> {{ payment.t2_amount }} р.</td>
+  			        <td> {{ payment.sum_tot }} р.</td>
+  		            </tr>
+	  	        {% endfor %}
+                </table>
+            {% endif %}
 {% endblock %}
