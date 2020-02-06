@@ -63,9 +63,12 @@ def user_payment_details_view(request, pk):
     allowed to be edited (only view mode)."""
     current_user = request.user
     payment_details = ElectricityPayments.objects.get(id=pk)
-    context = {
-        'payment_details': payment_details
-        }
+    if payment_details.record_status == 'n':
+        context = {
+            'payment_details': payment_details
+            }
+    else:
+        context = {}
 
     return render(request, 'payment_details.html', context=context)
 
