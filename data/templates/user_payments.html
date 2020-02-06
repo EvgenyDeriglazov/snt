@@ -19,7 +19,11 @@
   		                </tr>
 	  	            {% for payment in payments_list %}
 	  	                <tr>
-  			            <td> {{ payment.record_date }} </td>
+	  	                {% if payment.record_status == 'n' %}
+	  	                	<td><a href="{{ payment.get_absolute_url }}"> {{ payment.record_date }} </a></td>
+	  	                {% else %}
+	  	                	<td> {{ payment.record_date }} </td>
+	  	                {% endif %}
   			            <td> {{ payment.get_record_status_display }} </td>
   			            <td> {{ payment.t1_cons }} </td>
   			            <td> {{ payment.t2_cons }} </td>
@@ -46,7 +50,11 @@
 	            {% for payment in payments_consolidated_list %}
 	  	            <tr>
   			        <td> {{ payment.plot_number }} </td>
-  			        <td> {{ payment.record_date }} </td>
+  			        {% if payment.record_status == 'n' %}
+	  	                <td><a href="{{ payment.get_absolute_url }}"> {{ payment.record_date }} </a></td>
+	  	            {% else %}
+	  	                <td> {{ payment.record_date }} </td>
+	  	            {% endif %}
   			        <td> {{ payment.get_record_status_display }} </td>
   			        <td> {{ payment.t1_cons }} </td>
   			        <td> {{ payment.t2_cons }} </td>

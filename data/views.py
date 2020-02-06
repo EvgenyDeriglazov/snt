@@ -28,7 +28,9 @@ class ElectricityPaymentsListView(generic.ListView):
 
 @login_required
 def user_payments_view(request):
-    """View function for user payments page."""
+    """View function for user payments page. It will display
+    either payments table for one plot or consolidated payments
+    table for many plots owned by authenticated user."""
     context = {}
     current_user = request.user
     land_plot_query_set = current_user.landplot_set.all() 
@@ -52,3 +54,23 @@ def user_payments_view(request):
         context['payments_consolidated_list'] = payments_consolidated_list
                 
     return render(request, 'user_payments.html', context=context)
+
+@login_required
+def user_payment_details_view(request, pk):
+    """View function to display specific payment details. Payments
+    with record_status='n' (new) can be edited by the authenticated
+    user. Other paymnets with record_status='p', 'c', 'i' are not
+    allowed to be edited (only view mode)."""
+    current_user = request.user
+    payment_details = ElectricityPayments.objects.get(id=pk)
+    context = {
+        'payment_details': payment_details
+        }
+
+    return render(request, 'payment_details.html', context=context)
+
+@login_required
+def user_new_record_view(request):
+    pass
+
+
