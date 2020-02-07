@@ -22,14 +22,14 @@
 	  	                {% if payment.record_status == 'n' %}
 	  	                	<td><a href="{{ payment.get_absolute_url }}"> {{ payment.record_date }} </a></td>
 	  	                {% else %}
-	  	                	<td> {{ payment.record_date }} </td>
+	  	                	<td><a href="{% url 'payment-details' payment.id %}"> {{ payment.record_date }} </a></td>
 	  	                {% endif %}
   			            <td> {{ payment.get_record_status_display }} </td>
-  			            <td> {{ payment.t1_cons }} </td>
-  			            <td> {{ payment.t2_cons }} </td>
-  			            <td> {{ payment.t1_amount }} р.</td>
-  			            <td> {{ payment.t2_amount }} р.</td>
-  			            <td> {{ payment.sum_tot }} р.</td>
+  			            <td> {{ payment.t1_cons|default_if_none:"-"}} </td>
+  			            <td> {{ payment.t2_cons|default_if_none:"-"}} </td>
+  			            <td> {{ payment.t1_amount|default_if_none:"-"}} р.</td>
+  			            <td> {{ payment.t2_amount|default_if_none:"-"}} р.</td>
+  			            <td> {{ payment.sum_tot|default_if_none:"-"}} р.</td>
   		                </tr>
 	  	            {% endfor %}
 	                </table>
@@ -53,14 +53,14 @@
   			        {% if payment.record_status == 'n' %}
 	  	                <td><a href="{{ payment.get_absolute_url }}"> {{ payment.record_date }} </a></td>
 	  	            {% else %}
-	  	                <td> {{ payment.record_date }} </td>
+	  	                <td><a href="{% url 'payment-details' payment.id %}"> {{ payment.record_date }} </a></td>
 	  	            {% endif %}
   			        <td> {{ payment.get_record_status_display }} </td>
-  			        <td> {{ payment.t1_cons }} </td>
-  			        <td> {{ payment.t2_cons }} </td>
-  			        <td> {{ payment.t1_amount }} р.</td>
-  			        <td> {{ payment.t2_amount }} р.</td>
-  			        <td> {{ payment.sum_tot }} р.</td>
+  			        <td> {{ payment.t1_cons|default_if_none:"-" }} </td>
+  			        <td> {{ payment.t2_cons|default_if_none:"-" }} </td>
+  			        <td> {{ payment.t1_amount|default_if_none:"-" }} </td>
+  			        <td> {{ payment.t2_amount|default_if_none:"-" }} </td>
+  			        <td> {{ payment.sum_tot|default_if_none:"-" }} </td>
   		            </tr>
 	  	        {% endfor %}
                 </table>

@@ -56,24 +56,44 @@ def user_payments_view(request):
     return render(request, 'user_payments.html', context=context)
 
 @login_required
-def user_payment_details_view(request, pk):
+def user_payment_edit_view(request, pk):
     """View function to display specific payment details. Payments
     with record_status='n' (new) can be edited by the authenticated
     user. Other paymnets with record_status='p', 'c', 'i' are not
     allowed to be edited (only view mode)."""
     current_user = request.user
-    payment_details = ElectricityPayments.objects.get(id=pk)
-    if payment_details.record_status == 'n':
+    payment_edit = ElectricityPayments.objects.get(id=pk)
+    if payment_edit.record_status == 'n':
         context = {
-            'payment_details': payment_details
+            'payment_edit': payment_edit,
+            }
+    else:
+        context = {}
+
+    return render(request, 'payment_edit.html', context=context)
+
+@login_required
+def user_payment_details_view(request, pk):
+    """View function to display detailed information about
+    electricity payment record."""
+    current_user = request.user
+    payment_details = ElectricityPayments.objects.get(id=pk)
+    if payment_details:
+        context = {
+            'payment_details': payment_details,
             }
     else:
         context = {}
 
     return render(request, 'payment_details.html', context=context)
+    pass
 
 @login_required
 def user_new_record_view(request):
+    """View function to display form for new electricity payment
+    record."""
+    current_user = request.user
+
     pass
 
 
