@@ -8,4 +8,9 @@ urlpatterns = [
     	views.user_payment_details_view,
     	name='payment-details',
     	),
+    path(
+    	'user-payments/new',
+    	views.user_new_record_view,
+    	name='payment-new',
+    	)
 ]

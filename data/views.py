@@ -1,9 +1,11 @@
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.models import User
 from data.models import Snt, LandPlot, ElectricityPayments
 from django.views import generic
 from django.contrib.auth.decorators import login_required
+from django.urls import reverse
+from data.forms import NewElectricityPaymentForm
 import datetime
 
 # Create your views here.
@@ -93,7 +95,24 @@ def user_new_record_view(request):
     """View function to display form for new electricity payment
     record."""
     current_user = request.user
+    if request.method == 'POST':
+        form = NewElectricityPaymentForm(request.POST)
+        if form.is_valid():
+            new_record = ElectricityPayments.objects.create(
+                plot_number="1",
+                record_date="",
+                t1_new=form.cleaned_data['t1_new'],
+                t2_new="",
+                )
+            new_record.save()
+            return HttpResponseRedirect(reverse('user-payments'))
+    else:
+        form = NewElectricityPaymentForm()
 
-    pass
+    context = {
+        'form': form,
+        }
+
+    return render(request, 'payment_new.html', context=context)
 
 
