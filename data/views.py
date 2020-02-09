@@ -108,16 +108,19 @@ def user_new_record_view(request):
     if request.method == 'POST':
         form = NewElectricityPaymentForm(request.POST)
         if form.is_valid():
+            plot_number_cleaned = form.cleaned_data['plot_number']
+            t1_new_cleaned = form.cleaned_data['t1_new']
+            t2_new_cleaned = form.cleaned_data['t2_new']
             new_record = ElectricityPayments.objects.create(
-                plot_number="1",
+                plot_number=plot_number_cleaned,
                 record_date="",
-                t1_new=form.cleaned_data['t1_new'],
-                t2_new="",
+                t1_new=t1_new_cleaned,
+                t2_new=t2_new_cleaned,
                 )
-            new_record.save()
+            new_record.calculate_payment()
             return HttpResponseRedirect(reverse('user-payments'))
     else:
-        form = NewElectricityPaymentForm()
+        form = NewElectricityPaymentForm(user=current_user)
 
     context = {
         'form': form,
