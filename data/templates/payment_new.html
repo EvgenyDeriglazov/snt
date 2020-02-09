@@ -3,13 +3,7 @@
 {% block content %}
   <h1>СНТ</h1>
     <p>Добро пожаловать на сайт разработанный <em>z@rg systems</em>!</p>
-        <p>Редактирование показаний платежа.</p>
-        {% if payment_edit %}
-        	<p> {{ payment_edit }} </p>
-        {% else %}
-        	<p> Запись отсутсвтует или недоступна. </p>
-        {% endif %}
-
+        <p>Внесение новых показаний.</p>
         <form action="" method="post">
     	{% csrf_token %}
     	<table>

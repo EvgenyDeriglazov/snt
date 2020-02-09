@@ -1,11 +1,11 @@
-from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.contrib.auth.models import User
 from data.models import Snt, LandPlot, ElectricityPayments
-from django.views import generic
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from data.forms import NewElectricityPaymentForm
+from django.utils.translation import gettext_lazy as _
 import datetime
 
 # Create your views here.
@@ -22,11 +22,6 @@ def homepage(request):
     }
     
     return render(request, 'index.html', context=context)
-
-class ElectricityPaymentsListView(generic.ListView):
-    model = ElectricityPayments
-    context_object_name = 'payments'
-    template_name = 'data/payments.html'
 
 @login_required
 def user_payments_view(request):
@@ -64,13 +59,20 @@ def user_payment_edit_view(request, pk):
     user. Other paymnets with record_status='p', 'c', 'i' are not
     allowed to be edited (only view mode)."""
     current_user = request.user
-    payment_edit = ElectricityPayments.objects.get(id=pk)
-    if payment_edit.record_status == 'n':
+    #payment_edit = get_object_or_404(ElectricityPayments, pk=pk)
+    try:
+        payment_edit = ElectricityPayments.objects.get(id=pk)
+    except ElectricityPayments.DoesNotExist:
+        raise Http404(_("Такой записи не существует."))
+    if payment_edit.record_status == 'n' and \
+        payment_details.plot_number.user == current_user:
         context = {
             'payment_edit': payment_edit,
             }
     else:
-        context = {}
+        context = {
+            'payment_details': 'Данные отсутствуют.',
+            }
 
     return render(request, 'payment_edit.html', context=context)
 
@@ -79,13 +81,21 @@ def user_payment_details_view(request, pk):
     """View function to display detailed information about
     electricity payment record."""
     current_user = request.user
-    payment_details = ElectricityPayments.objects.get(id=pk)
-    if payment_details:
+    #payment_details = get_object_or_404(ElectricityPayments, pk=pk)
+    try:
+        payment_details = ElectricityPayments.objects.get(id=pk)
+    except ElectricityPayments.DoesNotExist:
+        raise Http404(_("Такой записи не существует."))
+
+    # Check if requested payment record belonges to current user
+    if payment_details.plot_number.user == current_user:
         context = {
             'payment_details': payment_details,
             }
     else:
-        context = {}
+        context = {
+            'payment_details': 'Данные отсутствуют.',
+            }
 
     return render(request, 'payment_details.html', context=context)
     pass
