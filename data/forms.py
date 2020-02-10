@@ -15,12 +15,12 @@ class NewElectricityPaymentForm(forms.Form):
         label="Номер участка",
         )
     t1_new = forms.IntegerField(
-    	label="Текущее покзание (день)",
+    	label="Текущее показание (день)",
     	help_text="Тариф Т1 (6:00-23:00)",
         min_value=0,
     	)
     t2_new = forms.IntegerField(
-    	label="Текущее покзание (ночь)",
+    	label="Текущее показание (ночь)",
     	help_text="Тариф Т2 (23:00-6:00)",
         min_value=0
     	)
@@ -34,7 +34,8 @@ class NewElectricityPaymentForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
+        land_plot_queryset = LandPlot.objects.filter(user=user)
         super(NewElectricityPaymentForm, self).__init__(*args, **kwargs)
 
         if user:
-            self.fields['plot_number'].queryset = LandPlot.objects.filter(user=user)
+            self.fields['plot_number'].queryset = land_plot_queryset
