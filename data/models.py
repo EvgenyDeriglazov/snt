@@ -635,6 +635,19 @@ class ElectricityPayments(models.Model):
         else:
             return False
 
+    def save(self, *args, **kwargs):
+        all_obj = ElectricityPayments.objects.filter(
+            plot_number__exact=self.plot_number,
+            )
+        n_records = all_obj.filter(record_status__exact='n')
+        p_records = all_obj.filter(record_status__exact='p')
+        if self.record_status == 'n' and \
+            (len(n_records) > 0 or len(p_records) > 0):
+            return False
+        else:
+            super().save(*args, **kwargs)
+        
+
 class Rate(models.Model):
     """Model representing snt rates to calculate 
     payments."""
