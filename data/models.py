@@ -643,7 +643,9 @@ class ElectricityPayments(models.Model):
         p_records = all_obj.filter(record_status__exact='p')
         if self.record_status == 'n' and \
             (len(n_records) > 0 or len(p_records) > 0):
-            return False
+            #raise UserWarning
+            raise ValidationError(_('Нельзя сохранить'))
+            #return False
         else:
             super().save(*args, **kwargs)
         

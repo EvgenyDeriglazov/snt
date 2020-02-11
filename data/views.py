@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from data.forms import NewElectricityPaymentForm
 from django.utils.translation import gettext_lazy as _
+from django.core.exceptions import ValidationError
 import datetime
 
 # Create your views here.
@@ -111,13 +112,16 @@ def user_new_record_view(request):
             plot_number_cleaned = form.cleaned_data['plot_number']
             t1_new_cleaned = form.cleaned_data['t1_new']
             t2_new_cleaned = form.cleaned_data['t2_new']
-            new_record = ElectricityPayments.objects.create(
-                plot_number=plot_number_cleaned,
-                record_date="",
-                t1_new=t1_new_cleaned,
-                t2_new=t2_new_cleaned,
-                )
-            new_record.calculate_payment()
+            try:
+                new_record = ElectricityPayments.objects.create(
+                    plot_number=plot_number_cleaned,
+                    record_date="",
+                    t1_new=t1_new_cleaned,
+                    t2_new=t2_new_cleaned,
+                    )
+                new_record.calculate_payment()
+            except ValidationError as error_message:
+                pass
             return HttpResponseRedirect(reverse('user-payments'))
     else:
         form = NewElectricityPaymentForm(user=current_user)
