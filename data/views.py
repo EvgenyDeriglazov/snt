@@ -106,7 +106,7 @@ def user_new_record_view(request):
     record."""
     current_user = request.user
     if request.method == 'POST':
-        form = NewElectricityPaymentForm(request.POST)
+        form = NewElectricityPaymentForm(request.POST, user=current_user)
         if form.is_valid():
             plot_number_cleaned = form.cleaned_data['plot_number']
             t1_new_cleaned = form.cleaned_data['t1_new']
