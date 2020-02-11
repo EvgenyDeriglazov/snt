@@ -34,8 +34,9 @@ class NewElectricityPaymentForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
-        land_plot_queryset = LandPlot.objects.filter(user=user)
-        super(NewElectricityPaymentForm, self).__init__(*args, **kwargs)
-
         if user:
-            self.fields['plot_number'].queryset = land_plot_queryset
+        	land_plot_queryset = LandPlot.objects.filter(user=user)
+        else:
+        	land_plot_queryset = LandPlot.objects.none()
+        super(NewElectricityPaymentForm, self).__init__(*args, **kwargs)
+        self.fields['plot_number'].queryset = land_plot_queryset
