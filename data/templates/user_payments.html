@@ -6,6 +6,7 @@
         <p>Данные оплаты за электроэнергию в СНТ "{{ snt_name }}".</p>
             {% if plot %}
                 <p>Данные участка номер {{ plot.plot_number }}</p>
+                <a href="{% url 'payment-new' %}"> Внести новые показания </a>
                 {% if payments_list %}
   	                <table>
   		                <tr>
@@ -19,11 +20,7 @@
   		                </tr>
 	  	            {% for payment in payments_list %}
 	  	                <tr>
-	  	                {% if payment.record_status == 'n' %}
-	  	                	<td><a href="{{ payment.get_absolute_url }}"> {{ payment.record_date }} </a></td>
-	  	                {% else %}
-	  	                	<td><a href="{% url 'payment-details' payment.id %}"> {{ payment.record_date }} </a></td>
-	  	                {% endif %}
+	  	                <td><a href="{% url 'payment-details' payment.id %}"> {{ payment.record_date }} </a></td>
   			            <td> {{ payment.get_record_status_display }} </td>
   			            <td> {{ payment.t1_cons|default_if_none:"-"}} </td>
   			            <td> {{ payment.t2_cons|default_if_none:"-"}} </td>
@@ -36,6 +33,7 @@
                 {% endif %}
             {% elif payments_consolidated_list %}
                 <p>Данные ваших участков</p>
+                <a href="{% url 'payment-new' %}"> Внести новые показания </a>
                 <table>
    		            <tr>
   			        <td> Номер участка </td>
@@ -50,11 +48,7 @@
 	            {% for payment in payments_consolidated_list %}
 	  	            <tr>
   			        <td> {{ payment.plot_number }} </td>
-  			        {% if payment.record_status == 'n' %}
-	  	                <td><a href="{{ payment.get_absolute_url }}"> {{ payment.record_date }} </a></td>
-	  	            {% else %}
-	  	                <td><a href="{% url 'payment-details' payment.id %}"> {{ payment.record_date }} </a></td>
-	  	            {% endif %}
+	  	            <td><a href="{% url 'payment-details' payment.id %}"> {{ payment.record_date }} </a></td>
   			        <td> {{ payment.get_record_status_display }} </td>
   			        <td> {{ payment.t1_cons|default_if_none:"-" }} </td>
   			        <td> {{ payment.t2_cons|default_if_none:"-" }} </td>
