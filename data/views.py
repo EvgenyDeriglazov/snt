@@ -120,8 +120,12 @@ def user_new_record_view(request):
                     t2_new=t2_new_cleaned,
                     )
                 new_record.calculate_payment()
-            except ValidationError as error_message:
-                pass
+            except ValidationError as validation_error:
+                context = {
+                    'form': form,
+                    'error_message': validation_error.message,
+                    }
+                return render(request, 'payment_new.html', context=context)
             return HttpResponseRedirect(reverse('user-payments'))
     else:
         form = NewElectricityPaymentForm(user=current_user)
