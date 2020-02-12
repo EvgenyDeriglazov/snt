@@ -3,60 +3,6 @@
 {% block content %}
   <h1>СНТ</h1>
     <p>Добро пожаловать на сайт разработанный <em>z@rg systems</em>!</p>
-        <p>Данные оплаты за электроэнергию в СНТ "{{ snt_name }}".</p>
-            {% if plot %}
-            <p>Данные участка номер {{ plot.plot_number }}</p>
-            <a href="{% url 'payment-new' %}"> Внести новые показания </a>
-              {% if payments_list %}
-  	          <table>
-  		        <tr>
-  			      <td> Дата показаний </td>
-  			      <td> Статус </td>
-              <td> День(квт/ч) </td>
-              <td> Ночь(квт/ч) </td>
-              <td> Сумма день </td>
-              <td> Сумма ночь </td>
-  			      <td> Итого </td>
-  		        </tr>
-	  	        {% for payment in payments_list %}
-	  	        <tr>
-	  	        <td><a href="{% url 'payment-details' payment.id %}"> {{ payment.record_date }} </a></td>
-  			      <td>{{ payment.get_record_status_display }}</td>
-  			      <td>{{ payment.t1_cons|default_if_none:"-"}}</td>
-  			      <td>{{ payment.t2_cons|default_if_none:"-"}}</td>
-  			      <td>{{ payment.t1_amount|default_if_none:"-"}}</td>
-  			      <td>{{ payment.t2_amount|default_if_none:"-"}}</td>
-  			      <td>{{ payment.sum_tot|default_if_none:"-"}}</td>
-  		        </tr>
-	  	        {% endfor %}
-	            </table>
-              {% endif %}
-            {% elif payments_consolidated_list %}
-            <p>Данные ваших участков</p>
-            <a href="{% url 'payment-new' %}"> Внести новые показания </a>
-            <table>
-   		      <tr>
-  			    <td> Номер участка </td>
-  			    <td> Дата показаний </td>
-  			    <td> Статус </td>
-            <td> День(квт/ч) </td>
-            <td> Ночь(квт/ч) </td>
-            <td> Сумма день </td>
-            <td> Сумма ночь </td>
-  			    <td> Итого </td>
-  		      </tr>
-	          {% for payment in payments_consolidated_list %}
-	  	      <tr>
-  			    <td> {{ payment.plot_number }} </td>
-	  	      <td><a href="{% url 'payment-details' payment.id %}"> {{ payment.record_date }} </a></td>
-  			    <td>{{ payment.get_record_status_display }}</td>
-  			    <td>{{ payment.t1_cons|default_if_none:"-" }}</td>
-  			    <td>{{ payment.t2_cons|default_if_none:"-" }}</td>
-  			    <td>{{ payment.t1_amount|default_if_none:"-" }}</td>
-  			    <td>{{ payment.t2_amount|default_if_none:"-" }}</td>
-  			    <td>{{ payment.sum_tot|default_if_none:"-" }}</td>
-  		      </tr>
-	  	      {% endfor %}
-            </table>
-            {% endif %}
-{% endblock %}
+        <p>Виды взносов в СНТ "{{ snt_name }}".</p>
+          <a href="{% url 'electricity-payments' %}"> Взносы за электроэнергию.</a>
+         {% endblock %}

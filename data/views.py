@@ -26,30 +26,13 @@ def homepage(request):
 
 @login_required
 def user_payments_view(request):
-    """View function for user payments page. It will display
-    either payments table for one plot or consolidated payments
-    table for many plots owned by authenticated user."""
-    context = {}
+    """View function to display links for each payment type."""
     current_user = request.user
     land_plot_query_set = current_user.landplot_set.all() 
-    if len(land_plot_query_set) == 1:
-        plot = land_plot_query_set[0]
-        context['snt_name'] = plot.snt
-        context['plot'] = plot
-        payments_list = ElectricityPayments.objects.filter(
-            plot_number__exact=plot
-            ).order_by('-record_date')
-        context['payments_list'] = payments_list
-    elif len(land_plot_query_set) > 1:
-        payments_consolidated_list = []
-        context['snt_name'] = land_plot_query_set[0].snt
-        for plot in land_plot_query_set:
-            payments_list = ElectricityPayments.objects.filter(
-                plot_number__exact=plot
-                ).order_by('-record_date')
-            for item in payments_list:
-                    payments_consolidated_list.append(item)
-        context['payments_consolidated_list'] = payments_consolidated_list
+    snt_name = land_plot_query_set[0].snt
+    context = {
+        'snt_name': snt_name,
+        }
                 
     return render(request, 'user_payments.html', context=context)
 
@@ -78,7 +61,7 @@ def user_payment_edit_view(request, pk):
     return render(request, 'payment_edit.html', context=context)
 
 @login_required
-def user_payment_details_view(request, pk):
+def user_payment_details_view(request, plot_num, pk):
     """View function to display detailed information about
     electricity payment record."""
     current_user = request.user
@@ -102,7 +85,7 @@ def user_payment_details_view(request, pk):
     pass
 
 @login_required
-def user_new_record_view(request):
+def user_new_payment_view(request, plot_num):
     """View function to display form for new electricity payment
     record."""
     current_user = request.user
@@ -125,7 +108,7 @@ def user_new_record_view(request):
                     'form': form,
                     'error_message': validation_error.message,
                     }
-                return render(request, 'payment_new.html', context=context)
+                return render(request, 'new-payment.html', context=context)
             return HttpResponseRedirect(reverse('user-payments'))
     else:
         form = NewElectricityPaymentForm(user=current_user)
@@ -134,6 +117,51 @@ def user_new_record_view(request):
         'form': form,
         }
 
-    return render(request, 'payment_new.html', context=context)
+    return render(request, 'new_payment.html', context=context)
 
+@login_required
+def user_electricity_payments_view(request):
+    """View function to display electricity payments for certain land
+    plot or if user has many land plots it will display list of url
+    links to certain land plot electricity payment page."""
+    current_user = request.user
+    land_plot_query_set = current_user.landplot_set.all() 
+    # If user has only one land plot
+    if len(land_plot_query_set) == 1:
+        snt_name = land_plot_query_set[0].snt
+        plot_number = land_plot_query_set[0].plot_number
+        payments_list = ElectricityPayments.objects.filter(
+            plot_number__exact=plot
+            ).order_by('-record_date')
+        context = {
+            'snt_name': snt_name,
+            'plot_number': plot_number,
+            'payments_list': payments_list,
+            }
+    # If user has more than one land plot
+    elif len(land_plot_query_set) > 1:
+        context = {
+            'snt_name': land_plot_query_set[0].snt,
+            'land_plot_query_set': land_plot_query_set,
+            }
 
+    return render(request, 'electricity_payments.html', context=context)
+
+@login_required
+def user_plot_electricity_payments_view(request, plot_num):
+    """View function to display electricity payments for certain
+    plot only."""
+    current_user = request.user
+    land_plot_query_set = current_user.landplot_set.all()
+    payments_list = ElectricityPayments.objects.filter(
+        plot_number__exact=plot_num
+        ).order_by('-record_date')
+    # Check if requested payments belong to current user
+    if payments_list[0].plot_number.user == current_user:
+        snt_name = land_plot_query_set[0].snt
+        context = {
+            'snt_name': snt_name,
+            'plot_number': plot_num,
+            'payments_list': payments_list,
+            }
+    return render(request, 'electricity_payments.html', context=context)
