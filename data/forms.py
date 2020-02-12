@@ -10,10 +10,6 @@ class UpdateElectricityPaymentForm(forms.Form):
 
 class NewElectricityPaymentForm(forms.Form):
     """Form to create new ElectricityPayment record in db."""
-    plot_number = forms.ModelChoiceField(
-        queryset=LandPlot.objects.all(),
-        label="Номер участка",
-        )
     t1_new = forms.IntegerField(
     	label="Текущее показание (день)",
     	help_text="Тариф Т1 (6:00-23:00)",
@@ -32,11 +28,3 @@ class NewElectricityPaymentForm(forms.Form):
     	data = self.cleaned_data['t2_new']
     	return data
 
-    def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)
-        if user:
-        	land_plot_queryset = LandPlot.objects.filter(user=user)
-        else:
-        	land_plot_queryset = LandPlot.objects.none()
-        super(NewElectricityPaymentForm, self).__init__(*args, **kwargs)
-        self.fields['plot_number'].queryset = land_plot_queryset

@@ -89,15 +89,15 @@ def user_new_payment_view(request, plot_num):
     """View function to display form for new electricity payment
     record."""
     current_user = request.user
-    if request.method == 'POST':
-        form = NewElectricityPaymentForm(request.POST, user=current_user)
+    land_plot = LandPlot.objects.get(id=plot_num)
+    if request.method == 'POST' and land_plot.user == current_user:
+        form = NewElectricityPaymentForm(request.POST)
         if form.is_valid():
-            plot_number_cleaned = form.cleaned_data['plot_number']
             t1_new_cleaned = form.cleaned_data['t1_new']
             t2_new_cleaned = form.cleaned_data['t2_new']
             try:
                 new_record = ElectricityPayments.objects.create(
-                    plot_number=plot_number_cleaned,
+                    plot_number=plot_num,
                     record_date="",
                     t1_new=t1_new_cleaned,
                     t2_new=t2_new_cleaned,
@@ -111,9 +111,10 @@ def user_new_payment_view(request, plot_num):
                 return render(request, 'new-payment.html', context=context)
             return HttpResponseRedirect(reverse('user-payments'))
     else:
-        form = NewElectricityPaymentForm(user=current_user)
+        form = NewElectricityPaymentForm()
 
     context = {
+        'plot_number': plot_num,
         'form': form,
         }
 
