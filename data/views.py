@@ -91,6 +91,7 @@ def user_new_payment_view(request, plot_num):
     current_user = request.user
     land_plot = LandPlot.objects.get(id=plot_num)
     electric_meter_type = land_plot.electric_meter.model_type
+    electric_meter_type_disp = land_plot.electric_meter.get_model_type_display()
     if request.method == 'POST' and land_plot.user == current_user:
         # Instantiate form for T1 electric meter type with user data
         if electric_meter_type == 'T1':
@@ -110,10 +111,12 @@ def user_new_payment_view(request, plot_num):
                         'plot_number': plot_num,
                         'form': form,
                         'error_message_list': error_message_list,
-                        'electric_meter_type': land_plot.electric_meter.get_model_type_display(),
+                        'electric_meter_type': electic_meter_type_disp,
                         }
                     return render(request, 'new_payment.html', context=context)
-                return HttpResponseRedirect(reverse('user-payments')) 
+                return HttpResponseRedirect(
+                    reverse('plot-electricity-payments', args=plot_num)
+                    ) 
 
         # Instantiate form for T2 electric meter type with user data
         else: 
@@ -134,10 +137,13 @@ def user_new_payment_view(request, plot_num):
                     context = {
                         'plot_number': plot_num,
                         'form': form,
-                        'electric_meter_type': land_plot.electric_meter.get_model_type_display(),
+                        'error_message_list': error_message_list,
+                        'electric_meter_type': electic_meter_type_disp,
                         }
                     return render(request, 'new_payment.html', context=context)
-                return HttpResponseRedirect(reverse('user-payments'))
+                return HttpResponseRedirect(
+                    reverse('plot-electricity-payments', args=plot_num)
+                    )
     else:
         # Instantiate empty form for certain electric meter type
         if electric_meter_type == 'T1':

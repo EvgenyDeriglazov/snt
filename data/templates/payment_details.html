@@ -1,5 +1,5 @@
 {% extends "base_generic.html" %}
-
+{% load qr_code %}
 {% block content %}
   <h1>СНТ</h1>
     <p>Добро пожаловать на сайт разработанный <em>z@rg systems</em>!</p>
@@ -9,4 +9,5 @@
         {% else %}
         	<p> Запись отсутсвтует или недоступна. </p>
         {% endif %}
+        {% qr_from_text "Alina pukilina!" size="T" image_format="png" %}
 {% endblock %}
