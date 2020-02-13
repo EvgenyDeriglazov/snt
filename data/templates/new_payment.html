@@ -3,7 +3,9 @@
 {% block content %}
   <h1>СНТ</h1>
     <p>Добро пожаловать на сайт разработанный <em>z@rg systems</em>!</p>
-        <p>Внесение новых показаний счетчика для участка номер {{ plot_number }}.</p>
+        <p>Внесение новых показаний счетчика для участка номер {{ plot_number }}.
+        <br>Тип счетчика {{ electric_meter_type|lower }}.</br> 
+        </p>
         {% if error_message_list %}
         <table>
             {% for error_message in error_message_list %}

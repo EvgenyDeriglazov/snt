@@ -110,6 +110,7 @@ def user_new_payment_view(request, plot_num):
                         'plot_number': plot_num,
                         'form': form,
                         'error_message_list': error_message_list,
+                        'electric_meter_type': land_plot.electric_meter.get_model_type_display(),
                         }
                     return render(request, 'new_payment.html', context=context)
                 return HttpResponseRedirect(reverse('user-payments')) 
@@ -133,7 +134,7 @@ def user_new_payment_view(request, plot_num):
                     context = {
                         'plot_number': plot_num,
                         'form': form,
-                        'error_message_list': error_message_list,
+                        'electric_meter_type': land_plot.electric_meter.get_model_type_display(),
                         }
                     return render(request, 'new_payment.html', context=context)
                 return HttpResponseRedirect(reverse('user-payments'))
@@ -147,6 +148,7 @@ def user_new_payment_view(request, plot_num):
     context = {
         'plot_number': plot_num,
         'form': form,
+        'electric_meter_type': land_plot.electric_meter.get_model_type_display(),
         }
 
     return render(request, 'new_payment.html', context=context)
