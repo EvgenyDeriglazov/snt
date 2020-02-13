@@ -162,16 +162,8 @@ def user_electricity_payments_view(request):
     land_plot_query_set = current_user.landplot_set.all() 
     # If user has only one land plot
     if len(land_plot_query_set) == 1:
-        snt_name = land_plot_query_set[0].snt
         plot_number = land_plot_query_set[0].plot_number
-        payments_list = ElectricityPayments.objects.filter(
-            plot_number__exact=plot
-            ).order_by('-record_date')
-        context = {
-            'snt_name': snt_name,
-            'plot_number': plot_number,
-            'payments_list': payments_list,
-            }
+        return HttpResponseRedirect(reverse('plot-electricity-payments', args=plot_number))
     # If user has more than one land plot
     elif len(land_plot_query_set) > 1:
         context = {
