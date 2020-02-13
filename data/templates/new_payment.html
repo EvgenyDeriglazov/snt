@@ -3,9 +3,13 @@
 {% block content %}
   <h1>СНТ</h1>
     <p>Добро пожаловать на сайт разработанный <em>z@rg systems</em>!</p>
-        <p>Внесение новых показаний для участка {{ plot_number }}.</p>
-        {% if error_message %}
-        <p>{{ error_message }}</p>
+        <p>Внесение новых показаний счетчика для участка номер {{ plot_number }}.</p>
+        {% if error_message_list %}
+        <table>
+            {% for error_message in error_message_list %}
+            <tr><td>{{ error_message }}</td></tr>
+            {% endfor %}
+        </table>
         {% endif %}
         <form action="" method="post">
     	{% csrf_token %}

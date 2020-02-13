@@ -643,7 +643,15 @@ class ElectricityPayments(models.Model):
         p_records = all_obj.filter(record_status__exact='p')
         if self.record_status == 'n' and \
             (len(n_records) > 0 or len(p_records) > 0):
-            raise ValidationError(_('Нельзя сохранить'))
+            # Create error message
+            error = "Невозможно сохранить новые показания."
+            if len(n_records) > 0:
+                error += "\nУ вас уже есть запись с новыми показаниями."
+            if len(p_records) > 0:
+                error += "\nУ вас уже есть оплаченный взнос ожидающий \
+                            подтверждения оплаты."
+            # Raise validation error
+            raise ValidationError(_(error))
         else:
             super().save(*args, **kwargs)
         

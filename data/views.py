@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from data.models import Snt, LandPlot, ElectricityPayments
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from data.forms import NewElectricityPaymentForm
+from data.forms import T1NewElectricityPaymentForm, T2NewElectricityPaymentForm
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 import datetime
@@ -90,28 +90,59 @@ def user_new_payment_view(request, plot_num):
     record."""
     current_user = request.user
     land_plot = LandPlot.objects.get(id=plot_num)
+    electric_meter_type = land_plot.electric_meter.model_type
     if request.method == 'POST' and land_plot.user == current_user:
-        form = NewElectricityPaymentForm(request.POST)
-        if form.is_valid():
-            t1_new_cleaned = form.cleaned_data['t1_new']
-            t2_new_cleaned = form.cleaned_data['t2_new']
-            try:
-                new_record = ElectricityPayments.objects.create(
-                    plot_number=plot_num,
-                    record_date="",
-                    t1_new=t1_new_cleaned,
-                    t2_new=t2_new_cleaned,
-                    )
-                new_record.calculate_payment()
-            except ValidationError as validation_error:
-                context = {
-                    'form': form,
-                    'error_message': validation_error.message,
-                    }
-                return render(request, 'new-payment.html', context=context)
-            return HttpResponseRedirect(reverse('user-payments'))
+        # Instantiate form for T1 electric meter type with user data
+        if electric_meter_type == 'T1':
+            form = T1NewElectricityPaymentForm(request.POST)
+            # Validate T1 form data 
+            if form.is_valid():
+                t1_new_cleaned = form.cleaned_data['t1_new']
+                try:
+                    new_record = ElectricityPayments.objects.create(
+                        plot_number=land_plot,
+                        t1_new=t1_new_cleaned,
+                        )
+                    new_record.calculate_payment()
+                except ValidationError as validation_error:
+                    error_message_list = validation_error.message.split("\n")
+                    context = {
+                        'plot_number': plot_num,
+                        'form': form,
+                        'error_message_list': error_message_list,
+                        }
+                    return render(request, 'new_payment.html', context=context)
+                return HttpResponseRedirect(reverse('user-payments')) 
+
+        # Instantiate form for T2 electric meter type with user data
+        else: 
+            form = T2NewElectricityPaymentForm(request.POST) 
+            # Validate T2 form data
+            if form.is_valid():
+                t1_new_cleaned = form.cleaned_data['t1_new']
+                t2_new_cleaned = form.cleaned_data['t2_new']
+                try:
+                    new_record = ElectricityPayments.objects.create(
+                        plot_number=land_plot,
+                        t1_new=t1_new_cleaned,
+                        t2_new=t2_new_cleaned,
+                        )
+                    new_record.calculate_payment()
+                except ValidationError as validation_error:
+                    error_message_list = validation_error.message.split("\n")
+                    context = {
+                        'plot_number': plot_num,
+                        'form': form,
+                        'error_message_list': error_message_list,
+                        }
+                    return render(request, 'new_payment.html', context=context)
+                return HttpResponseRedirect(reverse('user-payments'))
     else:
-        form = NewElectricityPaymentForm()
+        # Instantiate empty form for certain electric meter type
+        if electric_meter_type == 'T1':
+            form = T1NewElectricityPaymentForm()
+        else:
+            form = T2NewElectricityPaymentForm()
 
     context = {
         'plot_number': plot_num,

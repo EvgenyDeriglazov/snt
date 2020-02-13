@@ -8,15 +8,28 @@ class UpdateElectricityPaymentForm(forms.Form):
     record_status='n'."""
     pass
 
-class NewElectricityPaymentForm(forms.Form):
-    """Form to create new ElectricityPayment record in db."""
+class T1NewElectricityPaymentForm(forms.Form):
+    """Form to create new ElectricityPayment record in db
+    for T2 type of electricity meter (day and night rates)."""
     t1_new = forms.IntegerField(
-    	label="Текущее показание (день)",
+    	label="Новое показание",
+    	help_text="",
+        min_value=0,
+    	)
+    def clean_t1_new(self):
+    	data = self.cleaned_data['t1_new']
+    	return data
+
+class T2NewElectricityPaymentForm(forms.Form):
+    """Form to create new ElectricityPayment record in db
+    for T2 type of electricity meter (day and night rates)."""
+    t1_new = forms.IntegerField(
+    	label="Новое показание (день)",
     	help_text="Тариф Т1 (6:00-23:00)",
         min_value=0,
     	)
     t2_new = forms.IntegerField(
-    	label="Текущее показание (ночь)",
+    	label="Новое показание (ночь)",
     	help_text="Тариф Т2 (23:00-6:00)",
         min_value=0
     	)
