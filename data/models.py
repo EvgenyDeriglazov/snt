@@ -594,7 +594,7 @@ class ElectricityPayments(models.Model):
             self.t1_amount = self.t1_cons * current_rate_obj.t1_rate
             self.t2_amount = None
             self.sum_tot = self.t1_amount
-            self.save()
+            self.save(modify=True)
         elif em_model_type == 'T2' and fill_n_record and current_rate_obj:
             # Calculate consumption, amount (T1 & T2 rates) and 'sum_tot'
             self.t1_cons = self.t1_new - self.t1_prev
@@ -602,7 +602,7 @@ class ElectricityPayments(models.Model):
             self.t1_amount = self.t1_cons * current_rate_obj.t1_rate
             self.t2_amount = self.t2_cons * current_rate_obj.t2_rate
             self.sum_tot = self.t1_amount + self.t2_amount
-            self.save()
+            self.save(modify=True)
         else:
             return False # raise an error
 
@@ -641,7 +641,8 @@ class ElectricityPayments(models.Model):
             )
         n_records = all_obj.filter(record_status__exact='n')
         p_records = all_obj.filter(record_status__exact='p')
-        if self.record_status == 'n' and \
+        modify = kwargs.pop('modify', False)
+        if self.record_status == 'n' and not modify and\
             (len(n_records) > 0 or len(p_records) > 0):
             # Create error message
             error = "Невозможно сохранить новые показания."

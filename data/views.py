@@ -111,7 +111,7 @@ def user_new_payment_view(request, plot_num):
                         'plot_number': plot_num,
                         'form': form,
                         'error_message_list': error_message_list,
-                        'electric_meter_type': electic_meter_type_disp,
+                        'electric_meter_type': electric_meter_type_disp,
                         }
                     return render(request, 'new_payment.html', context=context)
                 return HttpResponseRedirect(
@@ -138,7 +138,7 @@ def user_new_payment_view(request, plot_num):
                         'plot_number': plot_num,
                         'form': form,
                         'error_message_list': error_message_list,
-                        'electric_meter_type': electic_meter_type_disp,
+                        'electric_meter_type': electric_meter_type_disp,
                         }
                     return render(request, 'new_payment.html', context=context)
                 return HttpResponseRedirect(
