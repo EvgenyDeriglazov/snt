@@ -65,6 +65,7 @@ def user_payment_details_view(request, plot_num, pk):
     """View function to display detailed information about
     electricity payment record."""
     current_user = request.user
+    qr_template = "ST00012|Name={}|PersonalAcc={}|BankName={}|BIC={}|CorrespAcc={}"
     #payment_details = get_object_or_404(ElectricityPayments, pk=pk)
     try:
         payment_details = ElectricityPayments.objects.get(id=pk)
@@ -73,8 +74,17 @@ def user_payment_details_view(request, plot_num, pk):
 
     # Check if requested payment record belonges to current user
     if payment_details.plot_number.user == current_user:
+        name = payment_details.plot_number.snt
+        p_acc = payment_details.plot_number.snt.personal_acc
+        b_name = payment_details.plot_number.snt.bank_name
+        bic_num = payment_details.plot_number.snt.bic
+        cor_acc = payment_details.plot_number.snt.corresp_acc
+        qr_text = qr_template.format(
+                name, p_acc, b_name, bic_num, cor_acc,
+                )
         context = {
             'payment_details': payment_details,
+            'qr_text': qr_text,
             }
     else:
         context = {
@@ -93,7 +103,7 @@ def user_new_payment_view(request, plot_num):
     electrical_counter_type = land_plot.electrical_counter.model_type
     electrical_counter_type_disp = land_plot.electrical_counter.get_model_type_display()
     if request.method == 'POST' and land_plot.user == current_user:
-        # Instantiate form for T1 electric meter type with user data
+        # Instantiate form for T1 electric counter type with user data
         if electrical_counter_type == 'T1':
             form = T1NewElectricityPaymentForm(request.POST)
             # Validate T1 form data 
@@ -118,7 +128,7 @@ def user_new_payment_view(request, plot_num):
                     reverse('plot-electricity-payments', args=plot_num)
                     ) 
 
-        # Instantiate form for T2 electric meter type with user data
+        # Instantiate form for T2 electric counter type with user data
         else: 
             form = T2NewElectricityPaymentForm(request.POST) 
             # Validate T2 form data
@@ -145,7 +155,7 @@ def user_new_payment_view(request, plot_num):
                     reverse('plot-electricity-payments', args=plot_num)
                     )
     else:
-        # Instantiate empty form for certain electric meter type
+        # Instantiate empty form for certain electric counter type
         if electrical_counter_type == 'T1':
             form = T1NewElectricityPaymentForm()
         else:
@@ -161,9 +171,10 @@ def user_new_payment_view(request, plot_num):
 
 @login_required
 def user_electricity_payments_view(request):
-    """View function to display electricity payments for certain land
-    plot or if user has many land plots it will display list of url
-    links to certain land plot electricity payment page."""
+    """View function to display list of links 
+    to certain land plot electricity payment page or
+    if a user has only one land plot it will redicrect to
+    user_plot_electricity_paymnents_view."""
     current_user = request.user
     land_plot_query_set = current_user.landplot_set.all() 
     # If user has only one land plot
