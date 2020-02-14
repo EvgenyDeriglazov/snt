@@ -116,7 +116,7 @@ class Snt(models.Model):
 class LandPlot(models.Model):
     """Model representing a land plot with basic information
     such as plot number (unique), area, owners (many-to-many), 
-    snt (fk), electric meter (one-to-one)."""
+    snt (fk), electric counter (one-to-one)."""
     plot_number = models.CharField(
         "Номер участка",
         max_length=10,
@@ -141,8 +141,8 @@ class LandPlot(models.Model):
         verbose_name="владелец участка",
         help_text="Владелец участка",
         )   
-    electric_meter = models.OneToOneField(
-        'ElectricMeter',
+    electrical_counter = models.OneToOneField(
+        'ElectricalCounter',
         on_delete=models.SET_NULL,
         null=True,
         verbose_name='Счетчик',
@@ -261,8 +261,8 @@ class Owner(models.Model):
         """Returns the url to access a detail record for this chairman."""
         return reverse('owner-detail', args=[str(self.id)])
 
-class ElectricMeter(models.Model):
-    """Model representing an electric meter with basic information
+class ElectricalCounter(models.Model):
+    """Model representing an electric counter with basic information
     such as serial number, type (1T/2T), land plot (one-to-one)."""
     model = models.CharField(
         "Модель",
@@ -303,10 +303,10 @@ class ElectricMeter(models.Model):
 
     def get_absolute_url(self):
         """Returns the url to access a detail record for this chairman."""
-        return reverse('electric-meter-detail', args=[str(self.id)])
+        return reverse('electric-counter-detail', args=[str(self.id)])
 
 class ElectricityPayments(models.Model):
-    """Model representing electic meter readings to keep records and
+    """Model representing electic counter readings to keep records and
     calculate payment for each land plot."""
     plot_number = models.ForeignKey(
         LandPlot,
@@ -502,7 +502,7 @@ class ElectricityPayments(models.Model):
         elif len(p_records) > 0:
             return False # Raise Error Here
         # Query data objects
-        em_model_type = self.plot_number.electric_meter.model_type
+        em_model_type = self.plot_number.electrical_counter.model_type
         c_record = self.get_c_record()
         i_record = self.get_i_record()
         # Conditional for T1 and T2 types filling
@@ -554,7 +554,7 @@ class ElectricityPayments(models.Model):
         )
         length = len(all_obj)
         if length == 1 and self.record_status == 'n':
-            em_model_type = self.plot_number.electric_meter.model_type
+            em_model_type = self.plot_number.electrical_counter.model_type
             if em_model_type == 'T1':
                 self.t1_prev = 0
                 self.t1_cons = 0
@@ -582,11 +582,11 @@ class ElectricityPayments(models.Model):
     def calculate_payment(self):
         """Calculates consumption of electricity and sum for payment.
         Fills relevant data in record_type='n' t1_cons, t2_cons, t1_amount
-        t2_amount and sum_tot. electric_meter.model_type is taken into
+        t2_amount and sum_tot. electrical_counter.model_type is taken into
         account during all calculations and db row pupulating."""
         fill_n_record = self.fill_n_record()
         current_rate_obj = self.get_current_rate()
-        em_model_type = self.plot_number.electric_meter.model_type
+        em_model_type = self.plot_number.electrical_counter.model_type
         if em_model_type == 'T1' and fill_n_record and current_rate_obj:
             # Calculate consumption, amount (T1 rate) and 'sum_tot'
             self.t1_cons = self.t1_new - self.t1_prev

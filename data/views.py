@@ -90,11 +90,11 @@ def user_new_payment_view(request, plot_num):
     record."""
     current_user = request.user
     land_plot = LandPlot.objects.get(id=plot_num)
-    electric_meter_type = land_plot.electric_meter.model_type
-    electric_meter_type_disp = land_plot.electric_meter.get_model_type_display()
+    electrical_counter_type = land_plot.electrical_counter.model_type
+    electrical_counter_type_disp = land_plot.electrical_counter.get_model_type_display()
     if request.method == 'POST' and land_plot.user == current_user:
         # Instantiate form for T1 electric meter type with user data
-        if electric_meter_type == 'T1':
+        if electrical_counter_type == 'T1':
             form = T1NewElectricityPaymentForm(request.POST)
             # Validate T1 form data 
             if form.is_valid():
@@ -111,7 +111,7 @@ def user_new_payment_view(request, plot_num):
                         'plot_number': plot_num,
                         'form': form,
                         'error_message_list': error_message_list,
-                        'electric_meter_type': electric_meter_type_disp,
+                        'electrical_counter_type': electrical_counter_type_disp,
                         }
                     return render(request, 'new_payment.html', context=context)
                 return HttpResponseRedirect(
@@ -138,7 +138,7 @@ def user_new_payment_view(request, plot_num):
                         'plot_number': plot_num,
                         'form': form,
                         'error_message_list': error_message_list,
-                        'electric_meter_type': electric_meter_type_disp,
+                        'electrical_counter_type': electrical_counter_type_disp,
                         }
                     return render(request, 'new_payment.html', context=context)
                 return HttpResponseRedirect(
@@ -146,7 +146,7 @@ def user_new_payment_view(request, plot_num):
                     )
     else:
         # Instantiate empty form for certain electric meter type
-        if electric_meter_type == 'T1':
+        if electrical_counter_type == 'T1':
             form = T1NewElectricityPaymentForm()
         else:
             form = T2NewElectricityPaymentForm()
@@ -154,7 +154,7 @@ def user_new_payment_view(request, plot_num):
     context = {
         'plot_number': plot_num,
         'form': form,
-        'electric_meter_type': land_plot.electric_meter.get_model_type_display(),
+        'electrical_counter_type': land_plot.electrical_counter.get_model_type_display(),
         }
 
     return render(request, 'new_payment.html', context=context)
