@@ -208,6 +208,12 @@ class Owner(models.Model):
     """Model representing an owner of land plot with basic infromation
     such as first name, last name, status (current or former), 
     land plot (many-to-many), start owner date, end owner date."""
+    last_name = models.CharField(
+        "Фамилия",
+        max_length=50,
+        help_text="Введите фамилию",
+        validators = [validate_human_names],
+    )
     first_name = models.CharField(
         "Имя",
         max_length=50,
@@ -220,18 +226,10 @@ class Owner(models.Model):
         help_text="Введите отчество",
         validators = [validate_human_names],
     )
-    last_name = models.CharField(
-        "Фамилия",
-        max_length=50,
-        help_text="Введите фамилию",
-        validators = [validate_human_names],
-    )
-
     OWNER_STATUS = [
         ('c', 'Настоящий'),
         ('p', 'Прежний'),
     ]
-
     status = models.CharField(
         "Статус владельца",
         max_length=1,
@@ -239,7 +237,6 @@ class Owner(models.Model):
         default='c',
         help_text="Статус владельца",
     )
-    
     start_owner_date = models.DateField(
         verbose_name="дата начала владения",
     )

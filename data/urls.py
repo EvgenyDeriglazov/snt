@@ -9,7 +9,7 @@ urlpatterns = [
     	name='electricity-payments',
     	),
     path(
-    	'payments/electricity-payments/plot-<plot_num>',
+    	'payments/electricity-payments/plot-<str:plot_num>',
     	views.user_plot_electricity_payments_view,
     	name='plot-electricity-payments',
     	),

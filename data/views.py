@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.contrib.auth.models import User
-from data.models import Snt, LandPlot, ElectricityPayments
+from data.models import Snt, LandPlot, ElectricityPayments, Rate
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from data.forms import T1NewElectricityPaymentForm, T2NewElectricityPaymentForm
@@ -65,7 +65,10 @@ def user_payment_details_view(request, plot_num, pk):
     """View function to display detailed information about
     electricity payment record."""
     current_user = request.user
-    qr_template = "ST00012|Name={}|PersonalAcc={}|BankName={}|BIC={}|CorrespAcc={}"
+    rate = Rate.objects.filter(rate_status__exact='c').get()
+    qr_text = "ST00012|Name=Садоводческое некоммерческое товаричество{}|\
+        PersonalAcc={}|BankName={}|BIC={}|CorrespAcc={}|INN={}|LastName={}|\
+        FirstName={}|MiddleName={}|Purpose={}|PayerAddress={}|Sum={}"
     #payment_details = get_object_or_404(ElectricityPayments, pk=pk)
     try:
         payment_details = ElectricityPayments.objects.get(id=pk)
@@ -77,10 +80,51 @@ def user_payment_details_view(request, plot_num, pk):
         name = payment_details.plot_number.snt
         p_acc = payment_details.plot_number.snt.personal_acc
         b_name = payment_details.plot_number.snt.bank_name
-        bic_num = payment_details.plot_number.snt.bic
+        bic = payment_details.plot_number.snt.bic
         cor_acc = payment_details.plot_number.snt.corresp_acc
-        qr_text = qr_template.format(
-                name, p_acc, b_name, bic_num, cor_acc,
+        inn = payment_details.plot_number.snt.inn
+        last_name = payment_details.plot_number.owner.last_name
+        first_name = payment_details.plot_number.owner.first_name
+        middle_name = payment_details.plot_number.owner.middle_name
+        e_counter_type = payment_details.plot_number.electrical_counter.model_type
+        if e_counter_type == 'T1':
+            t1_new = payment_details.t1_new
+            t1_prev = payment_details.t1_prev
+            t1_cons = payment_details.t1_cons
+            t1_rate = rate.t1_rate
+            t1_amount = payment_details.t1_amount
+            sum_tot = payment_details.sum_tot
+            purpose = "Членские взносы за э/энергию, однотарифный/{}-{}/{},\
+                {}x{}/{}.Итого/{}." 
+            purpose = purpose.format(
+                t1_new, t1_prev, t1_cons, t1_cons, t1_rate, t1_amount, sum_tot,
+                )
+        elif e_counter_type == 'T2':
+            t1_new = payment_details.t1_new
+            t2_new = payment_details.t2_new
+            t1_prev = payment_details.t1_prev
+            t2_prev = payment_details.t2_prev
+            t1_cons = payment_details.t1_cons
+            t2_cons = payment_details.t2_cons
+            t1_rate = rate.t1_rate
+            t2_rate = rate.t2_rate
+            t1_amount = payment_details.t1_amount
+            t2_amount = payment_details.t2_amount
+            sum_tot = payment_details.sum_tot
+            purpose = "Членские взносы за э/энергию, T1/{}-{}/{},\
+                T2/{}-{}/{}, T1/{}x{}/{}, T2/{}x{}/{}.Итого/{}." 
+            purpose = purpose.format(
+                t1_new, t1_prev, t1_cons,
+                t2_new, t2_prev, t2_cons,
+                t1_cons, t1_rate, t1_amount,
+                t2_cons, t2_rate, t2_amount,
+                sum_tot,
+                )
+        payer_address = "участок №{}, СНТ{}".format(plot_num, name)   
+        sum_tot = payment_details.sum_tot
+        qr_text = qr_text.format(
+                name, p_acc, b_name, bic, cor_acc, inn, last_name, first_name,
+                middle_name, purpose, payer_address, sum_tot,
                 )
         context = {
             'payment_details': payment_details,
@@ -99,7 +143,7 @@ def user_new_payment_view(request, plot_num):
     """View function to display form for new electricity payment
     record."""
     current_user = request.user
-    land_plot = LandPlot.objects.get(id=plot_num)
+    land_plot = LandPlot.objects.get(plot_number=plot_num)
     electrical_counter_type = land_plot.electrical_counter.model_type
     electrical_counter_type_disp = land_plot.electrical_counter.get_model_type_display()
     if request.method == 'POST' and land_plot.user == current_user:
@@ -125,7 +169,7 @@ def user_new_payment_view(request, plot_num):
                         }
                     return render(request, 'new_payment.html', context=context)
                 return HttpResponseRedirect(
-                    reverse('plot-electricity-payments', args=plot_num)
+                    reverse('plot-electricity-payments', args=[plot_num])
                     ) 
 
         # Instantiate form for T2 electric counter type with user data
@@ -142,6 +186,7 @@ def user_new_payment_view(request, plot_num):
                         t2_new=t2_new_cleaned,
                         )
                     new_record.calculate_payment()
+                # Get ValidationError from save() method
                 except ValidationError as validation_error:
                     error_message_list = validation_error.message.split("\n")
                     context = {
@@ -152,7 +197,7 @@ def user_new_payment_view(request, plot_num):
                         }
                     return render(request, 'new_payment.html', context=context)
                 return HttpResponseRedirect(
-                    reverse('plot-electricity-payments', args=plot_num)
+                    reverse('plot-electricity-payments', args=[plot_num])
                     )
     else:
         # Instantiate empty form for certain electric counter type
@@ -177,10 +222,12 @@ def user_electricity_payments_view(request):
     user_plot_electricity_paymnents_view."""
     current_user = request.user
     land_plot_query_set = current_user.landplot_set.all() 
-    # If user has only one land plot
+    # If user has only 1 land plot,redirect to user_plot_electricity_payments_view
     if len(land_plot_query_set) == 1:
         plot_number = land_plot_query_set[0].plot_number
-        return HttpResponseRedirect(reverse('plot-electricity-payments', args=plot_number))
+        return HttpResponseRedirect(
+            reverse('plot-electricity-payments', args=plot_number)
+            )
     # If user has more than one land plot
     elif len(land_plot_query_set) > 1:
         context = {
@@ -194,17 +241,29 @@ def user_electricity_payments_view(request):
 def user_plot_electricity_payments_view(request, plot_num):
     """View function to display electricity payments for certain
     plot only."""
+    # Implement plot_num validation vs request.user
     current_user = request.user
     land_plot_query_set = current_user.landplot_set.all()
+    land_plot = land_plot_query_set.filter(plot_number__exact=plot_num).get()
     payments_list = ElectricityPayments.objects.filter(
-        plot_number__exact=plot_num
+        plot_number__exact=land_plot
         ).order_by('-record_date')
     # Check if requested payments belong to current user
-    if payments_list[0].plot_number.user == current_user:
-        snt_name = land_plot_query_set[0].snt
+    if len(payments_list) > 0:
+        if payments_list[0].plot_number.user == current_user:
+            snt_name = payments_list[0].plot_number.snt
+            context = {
+                'snt_name': snt_name,
+                'plot_number': plot_num,
+                'payments_list': payments_list,
+                }
+    else:
+        snt_name = land_plot_query_set.filter(
+            plot_number__exact=plot_num).get()
         context = {
-            'snt_name': snt_name,
+            'snt_name': snt_name.snt,
             'plot_number': plot_num,
-            'payments_list': payments_list,
+            'no_records': 'У вас еще нет показаний счетчика.',
             }
+        
     return render(request, 'electricity_payments.html', context=context)
