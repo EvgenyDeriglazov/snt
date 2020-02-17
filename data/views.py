@@ -23,10 +23,6 @@ def homepage(request):
     }
     
     return render(request, 'index.html', context=context)
-@login_required
-def error_view(request):
-    """View for draft error page."""
-    render(request, 'error_page.html', context=context)
 
 @login_required
 def user_payments_view(request):
