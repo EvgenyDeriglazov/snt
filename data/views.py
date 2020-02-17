@@ -144,11 +144,11 @@ def user_new_payment_view(request, plot_num):
     record."""
     current_user = request.user
     land_plot = LandPlot.objects.get(plot_number=plot_num)
-    electrical_counter_type = land_plot.electrical_counter.model_type
-    electrical_counter_type_disp = land_plot.electrical_counter.get_model_type_display()
+    el_counter_type = land_plot.electrical_counter.model_type
+    el_counter_type_disp = land_plot.electrical_counter.get_model_type_display()
     if request.method == 'POST' and land_plot.user == current_user:
         # Instantiate form for T1 electric counter type with user data
-        if electrical_counter_type == 'T1':
+        if el_counter_type == 'T1':
             form = T1NewElectricityPaymentForm(request.POST)
             # Validate T1 form data 
             if form.is_valid():
@@ -165,9 +165,11 @@ def user_new_payment_view(request, plot_num):
                         'plot_number': plot_num,
                         'form': form,
                         'error_message_list': error_message_list,
-                        'electrical_counter_type': electrical_counter_type_disp,
+                        'el_counter_type_disp': el_counter_type_disp,
                         }
+                    # Error - render form with error message
                     return render(request, 'new_payment.html', context=context)
+                # OK - redirect to plot electricity payments list page
                 return HttpResponseRedirect(
                     reverse('plot-electricity-payments', args=[plot_num])
                     ) 
@@ -193,25 +195,41 @@ def user_new_payment_view(request, plot_num):
                         'plot_number': plot_num,
                         'form': form,
                         'error_message_list': error_message_list,
-                        'electrical_counter_type': electrical_counter_type_disp,
+                        'el_counter_type_disp': el_counter_type_disp,
                         }
+                    # Error - render form with error message
                     return render(request, 'new_payment.html', context=context)
+                # OK - redirect to plot electricity payments list page
                 return HttpResponseRedirect(
                     reverse('plot-electricity-payments', args=[plot_num])
                     )
     else:
         # Instantiate empty form for certain electric counter type
-        if electrical_counter_type == 'T1':
+        if el_counter_type == 'T1' and land_plot.user == current_user:
             form = T1NewElectricityPaymentForm()
-        else:
+        elif el_counter_type == 'T2' and land_plot.user == current_user:
             form = T2NewElectricityPaymentForm()
+        # Error - if incorrect counter type
+        elif el_counter_type != 'T1' and el_counter_type != 'T2':
+            error_message_list = "Неверный тип счетчика."
+            context = {
+                'error_message': error_message,
+                }
 
+        # Error - if incorrect user
+        else:
+            error_message = "У вас нет такого номер участка."
+            context = {
+                'error_message': error_message,
+                }
+
+    # Context for empty form
     context = {
         'plot_number': plot_num,
         'form': form,
-        'electrical_counter_type': land_plot.electrical_counter.get_model_type_display(),
+        'el_counter_type_disp': el_counter_type_disp,
         }
-
+    # Render empty form
     return render(request, 'new_payment.html', context=context)
 
 @login_required
@@ -226,7 +244,7 @@ def user_electricity_payments_view(request):
     if len(land_plot_query_set) == 1:
         plot_number = land_plot_query_set[0].plot_number
         return HttpResponseRedirect(
-            reverse('plot-electricity-payments', args=plot_number)
+            reverse('plot-electricity-payments', args=[plot_number])
             )
     # If user has more than one land plot
     elif len(land_plot_query_set) > 1:
