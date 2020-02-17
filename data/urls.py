@@ -23,10 +23,5 @@ urlpatterns = [
     	views.user_payment_details_view,
     	name='payment-details',
     	),
-     path(
-    	'payments/error',
-    	views.error_view,
-    	name='error-page',
-    	),
  
 ]
