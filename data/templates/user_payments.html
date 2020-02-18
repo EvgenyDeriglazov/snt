@@ -1,8 +1,6 @@
 {% extends "base_generic.html" %}
 
 {% block content %}
-  <h1>СНТ</h1>
-    <p>Добро пожаловать на сайт разработанный <em>z@rg systems</em>!</p>
-        <p>{{ snt_name }} (виды взносов).</p>
+        <p>СНТ {{ snt_name }} (виды взносов).</p>
           <a href="{% url 'electricity-payments' %}"> Взносы за электроэнергию.</a>
          {% endblock %}

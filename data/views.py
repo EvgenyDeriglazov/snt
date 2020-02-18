@@ -29,12 +29,18 @@ def user_payments_view(request):
     """View function to display links for each payment type."""
     current_user = request.user
     land_plot_query_set = current_user.landplot_set.all() 
-    snt_name = land_plot_query_set[0].snt
-    context = {
-        'snt_name': snt_name,
-        }
-                
-    return render(request, 'user_payments.html', context=context)
+    if len(land_plot_query_set) == 0:
+        error_message = "У вас еще нет ни одного участка."
+        context = {
+            'error_message': error_message,
+            }
+        return render(request, 'error_page.html', context=context)
+    else:
+        snt_name = land_plot_query_set[0].snt
+        context = {
+            'snt_name': snt_name,
+            }
+        return render(request, 'user_payments.html', context=context)
 
 @login_required
 def user_payment_edit_view(request, pk):
