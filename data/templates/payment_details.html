@@ -1,8 +1,7 @@
 {% extends "base_generic.html" %}
 {% load qr_code %}
 {% block content %}
-  <h1>СНТ</h1>
-    <p>Добро пожаловать на сайт разработанный <em>z@rg systems</em>!</p>
+		<p>СНТ {{ snt_name }}.</p>     
         <p>Детали платежа.</p>
         {% if payment_details %}
         	<p> {{ payment_details }} </p>

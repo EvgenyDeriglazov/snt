@@ -71,16 +71,33 @@ def user_payment_details_view(request, plot_num, pk):
     """View function to display detailed information about
     electricity payment record."""
     current_user = request.user
-    rate = Rate.objects.filter(rate_status__exact='c').get()
     qr_text = "ST00012|Name=Садоводческое некоммерческое товаричество{}|\
         PersonalAcc={}|BankName={}|BIC={}|CorrespAcc={}|INN={}|LastName={}|\
         FirstName={}|MiddleName={}|Purpose={}|PayerAddress={}|Sum={}"
     #payment_details = get_object_or_404(ElectricityPayments, pk=pk)
+    # Get ElectricityPayments object from db
     try:
         payment_details = ElectricityPayments.objects.get(id=pk)
     except ElectricityPayments.DoesNotExist:
-        raise Http404(_("Такой записи не существует."))
+        error_message = "Запись запрошенных показаний отсутствует."
+        context = {
+            'error_message': error_message,
+            }
+        return render(request, 'error_page.html', context=context)
+ 
+    # Get Rate object from db which corresponds to payment_details.date    
+    try:
+        rate = Rate.objects.filter(
+            intro_date__lte=payment_details.record_date,
+            ).latest('intro_date')
+    except Rate.DoesNotExist:
+        error_message = "Запись тарифа для данных показаний отсутствует."
+        context = {
+            'error_message': error_message,
+            }
+        return render(request, 'error_page.html', context=context)
 
+    snt_name = payment_details.plot_number.snt
     # Check if requested payment record belonges to current user
     if payment_details.plot_number.user == current_user:
         name = payment_details.plot_number.snt
@@ -133,16 +150,18 @@ def user_payment_details_view(request, plot_num, pk):
                 middle_name, purpose, payer_address, sum_tot,
                 )
         context = {
+            'snt_name': snt_name,
             'payment_details': payment_details,
             'qr_text': qr_text,
             }
     else:
+        error_message = "Данный номер платежа не относится к вашему участку."
         context = {
-            'payment_details': 'Данные отсутствуют.',
+            'error_message': error_message,
             }
+        return render(request, 'error_page.html', context=context)
 
     return render(request, 'payment_details.html', context=context)
-    pass
 
 @login_required
 def user_new_payment_view(request, plot_num):
@@ -232,7 +251,7 @@ def user_new_payment_view(request, plot_num):
             form = T2NewElectricityPaymentForm()
         # If counter type is not correct render error page
         elif el_counter_type != 'T1' and el_counter_type != 'T2':
-            error_message_list = "Неверный тип счетчика."
+            error_message = "Неверный тип счетчика."
             context = {
                 'error_message': error_message,
                 }
