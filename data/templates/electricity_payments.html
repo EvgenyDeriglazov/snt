@@ -1,9 +1,7 @@
 {% extends "base_generic.html" %}
 
 {% block content %}
-  <h1>СНТ</h1>
-    <p>Добро пожаловать на сайт разработанный <em>z@rg systems</em>!</p>
-        <p>СНТ{{ snt_name }} (взносы за электроэнергию).</p>
+        <p>СНТ {{ snt_name }} (взносы за электроэнергию).</p>
             {% if plot_number %}
             <p>Данные участка номер {{ plot_number }}</p>
             <a href="{% url 'new-payment' plot_number%}"> Внести новые показания </a>

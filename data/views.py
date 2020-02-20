@@ -53,18 +53,32 @@ def user_payment_edit_view(request, pk):
     try:
         payment_edit = ElectricityPayments.objects.get(id=pk)
     except ElectricityPayments.DoesNotExist:
-        raise Http404(_("Такой записи не существует."))
+        error_message = "Запись запрашиваемых показаний отсутствует."
+        context = {
+            'error_message': error_message,
+            }
+        return render(request, 'error_page.html', context=context)
     if payment_edit.record_status == 'n' and \
         payment_details.plot_number.user == current_user:
         context = {
             'payment_edit': payment_edit,
             }
-    else:
+        return render(request, 'payment_edit.html', context=context)
+    elif payment_edit.record_status != 'n':
+        payment_status = payment_edit.get_record_status_display
+        error_message = "Отредактировать можно только новые показания. \
+            Текущая запись имеет статус {}.".format(payment_status)
         context = {
-            'payment_details': 'Данные отсутствуют.',
+            'error_message': error_message,
             }
+        return render(request, 'error_page.html', context=context)
+    elif payment_details.plot_number.user != current_user:
+        error_message = "Выбранные показания относятся к другому участку."
+        context = {
+            'error_message': error_message,
+            }
+        return render(request, 'error_page.html', context=context)
 
-    return render(request, 'payment_edit.html', context=context)
 
 @login_required
 def user_payment_details_view(request, plot_num, pk):
@@ -79,7 +93,7 @@ def user_payment_details_view(request, plot_num, pk):
     try:
         payment_details = ElectricityPayments.objects.get(id=pk)
     except ElectricityPayments.DoesNotExist:
-        error_message = "Запись запрошенных показаний отсутствует."
+        error_message = "Запись запрашиваемых показаний отсутствует."
         context = {
             'error_message': error_message,
             }
@@ -155,7 +169,7 @@ def user_payment_details_view(request, plot_num, pk):
             'qr_text': qr_text,
             }
     else:
-        error_message = "Данный номер платежа не относится к вашему участку."
+        error_message = "Запрашиваемые показания не относятся к вашему участку."
         context = {
             'error_message': error_message,
             }
@@ -294,21 +308,36 @@ def user_electricity_payments_view(request):
             'snt_name': land_plot_query_set[0].snt,
             'land_plot_query_set': land_plot_query_set,
             }
-
-    return render(request, 'electricity_payments.html', context=context)
+        return render(request, 'electricity_payments.html', context=context)
 
 @login_required
 def user_plot_electricity_payments_view(request, plot_num):
     """View function to display electricity payments for certain
     plot only."""
-    # Implement plot_num validation vs request.user
+    # Get current user from request and all his land plots
     current_user = request.user
     land_plot_query_set = current_user.landplot_set.all()
+    # Check if current user has any land plots
+    if len(land_plot_query_set) == 0:
+        error_message = "У вас еще нет ни одного участка."
+        context = {
+            'error_message': error_message,
+            }
+        return render(request, 'error_page.html', context=context)
+    # Get requested plot instance
     land_plot = land_plot_query_set.filter(plot_number__exact=plot_num).get()
-    payments_list = ElectricityPayments.objects.filter(
-        plot_number__exact=land_plot
-        ).order_by('-record_date')
-    # Check if requested payments belong to current user
+    # Get payments list or raise an error
+    try:
+        payments_list = ElectricityPayments.objects.filter(
+            plot_number__exact=land_plot
+            ).order_by('-record_date')
+    except ElectricityPayments.DoesNotExist:
+        error_message = "У вас еще нет ни одного показания."
+        context = {
+            'error_message': error_message,
+            }
+        return render(request, 'error_page.html', context=context)
+    # Check if payments_list belongs to current user, otherwise raise error 
     if len(payments_list) > 0:
         if payments_list[0].plot_number.user == current_user:
             snt_name = payments_list[0].plot_number.snt
@@ -317,6 +346,12 @@ def user_plot_electricity_payments_view(request, plot_num):
                 'plot_number': plot_num,
                 'payments_list': payments_list,
                 }
+        else:
+            error_message = "Запрашиваемые показания не относятся к вашему участку."
+            context = {
+                'error_message': error_message,
+                }
+            return render(context, 'error_page.html', context=context)
     else:
         snt_name = land_plot_query_set.filter(
             plot_number__exact=plot_num).get()
