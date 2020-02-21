@@ -105,11 +105,21 @@ def user_payment_details_view(request, plot_num, pk):
             'error_message': error_message,
             }
         return render(request, 'error_page.html', context=context)
+    # Get plot instance from db
+    try:
+        plot = LandPlot.objects.get(id=plot_num)
+    except LandPlot.DoesNotExist:
+        error_message = "Участка с номером {} нет в базе данных.".format(plot_num)
+        context = {
+            'error_message': error_message,
+            }
+        return render(request, 'error_page.html', context=context)
     # Get content from get_qr_code() function
     context, do_render = get_qr_code(current_user, plot_num, payment_details, rate)
-    # Check it requested data belongs to current user
+    # Check it requested data belongs to current user and land plot
     if payment_details.plot_number.user == current_user and \
-        context['payment_details'].plot_number.user == current_user:
+        context['payment_details'].plot_number.user == current_user and \
+        payment_details.plot_number == plot:
         # If no internal mistake in get_qr_code() - render page
         if do_render == True:
             return render(request, 'payment_details.html', context=context)
@@ -132,7 +142,7 @@ def user_new_payment_view(request, plot_num):
     try:
         land_plot = LandPlot.objects.get(plot_number=plot_num)
     except LandPlot.DoesNotExist:
-        error_message = "Участка номер {} нет в базе данных.".format(plot_num)
+        error_message = "Участка с номером {} нет в базе данных.".format(plot_num)
         context = {
             'error_message': error_message,
             }
@@ -216,7 +226,6 @@ def user_new_payment_view(request, plot_num):
                 'error_message': error_message,
                 }
             return render(request, 'error_page.html', context=context)
-
         # If land plot does not belong to current user render error page
         elif land_plot.user != current_user:
             error_message = "У вас нет участка с номером {}.".format(plot_num)
