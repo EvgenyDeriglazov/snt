@@ -114,12 +114,14 @@ def user_payment_details_view(request, plot_num, pk):
             'error_message': error_message,
             }
         return render(request, 'error_page.html', context=context)
+    plot1 = payment_details.plot_number
     # Get content from get_qr_code() function
     context, do_render = get_qr_code(current_user, plot_num, payment_details, rate)
     # Check it requested data belongs to current user and land plot
     if payment_details.plot_number.user == current_user and \
         context['payment_details'].plot_number.user == current_user and \
-        payment_details.plot_number == plot:
+        payment_details.plot_number == plot and \
+        context['payment_details'].plot_number == plot:
         # If no internal mistake in get_qr_code() - render page
         if do_render == True:
             return render(request, 'payment_details.html', context=context)
@@ -280,7 +282,14 @@ def user_plot_electricity_payments_view(request, plot_num):
             }
         return render(request, 'error_page.html', context=context)
     # Get requested plot instance
-    land_plot = land_plot_query_set.filter(plot_number__exact=plot_num).get()
+    try:
+        land_plot = land_plot_query_set.filter(plot_number__exact=plot_num).get()
+    except LandPlot.DoesNotExist:
+        error_message = "У вас нет участка с таким номером."
+        context = {
+            'error_message': error_message,
+            }
+        return render(request, 'error_page.html', context=context)
     # Get payments list or raise an error
     try:
         payments_list = ElectricityPayments.objects.filter(
@@ -318,6 +327,7 @@ def user_plot_electricity_payments_view(request, plot_num):
         
     return render(request, 'electricity_payments.html', context=context)
 
+# Reusable functions
 def get_qr_code(current_user, plot_num, payment_details, rate):
     """Function to prepare qr code and return result to view
     for rendering web page (context{}, correct(bolean))."""
