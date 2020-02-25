@@ -249,7 +249,7 @@ def user_electricity_payments_view(request):
     """View function to display list of links 
     to certain land plot electricity payment page or
     if a user has only one land plot it will redicrect to
-    user_plot_electricity_paymnents_view."""
+    user_plot_electricity_payments_view."""
     current_user = request.user
     land_plot_query_set = current_user.landplot_set.all() 
     # If user has only 1 land plot,redirect to user_plot_electricity_payments_view
@@ -353,7 +353,7 @@ def get_qr_code(current_user, plot_num, payment_details, rate):
             t1_amount = payment_details.t1_amount
             sum_tot = payment_details.sum_tot
             purpose = "Членские взносы за э/энергию, однотарифный/{}-{}/{},\
-                {}x{}/{}.Итого/{}." 
+                {}x{}/{}. Итого/{}." 
             purpose = purpose.format(
                 t1_new, t1_prev, t1_cons, t1_cons,
                 t1_rate, t1_amount, sum_tot,
@@ -371,7 +371,7 @@ def get_qr_code(current_user, plot_num, payment_details, rate):
             t2_amount = payment_details.t2_amount
             sum_tot = payment_details.sum_tot
             purpose = "Членские взносы за э/энергию, T1/{}-{}/{},\
-                T2/{}-{}/{}, T1/{}x{}/{}, T2/{}x{}/{}.Итого/{}." 
+                T2/{}-{}/{}, T1/{}x{}/{}, T2/{}x{}/{}. Итого/{}." 
             purpose = purpose.format(
                 t1_new, t1_prev, t1_cons,
                 t2_new, t2_prev, t2_cons,
@@ -379,8 +379,8 @@ def get_qr_code(current_user, plot_num, payment_details, rate):
                 t2_cons, t2_rate, t2_amount,
                 sum_tot,
                 )
-        payer_address = "участок №{}, СНТ{}".format(plot_num, name)   
-        sum_tot = payment_details.sum_tot
+        payer_address = "участок №{}, СНТ {}".format(plot_num, name)   
+        sum_tot = payment_details.sum_tot * 100
         qr_text = qr_text.format(
             name, p_acc, b_name, bic, cor_acc,inn, last_name, first_name,
             middle_name, purpose, payer_address, sum_tot,
@@ -389,6 +389,11 @@ def get_qr_code(current_user, plot_num, payment_details, rate):
             'snt_name': snt_name,
             'payment_details': payment_details,
             'qr_text': qr_text,
+            'payer_address': payer_address,
+            'purpose': purpose,
+            'last_name': last_name,
+            'first_name': first_name,
+            'middle_name': middle_name,
             }
         do_render = True
     else:

@@ -4,7 +4,18 @@
 		<p>СНТ {{ snt_name }}.</p>     
         <p>Детали платежа.</p>
         {% if payment_details %}
-        	<p> {{ payment_details }} </p>
+            <ul style="list-style-type:none;">
+                <li> СНТ {{ payment_details.plot_number.snt }} </li>
+                <li> р\с: {{ payment_details.plot_number.snt.personal_acc }} </li>
+                <li> {{ payment_details.plot_number.snt.bank_name }} </li>
+                <li> БИК: {{ payment_details.plot_number.snt.bic }} </li>
+                <li> корр. счет: {{ payment_details.plot_number.snt.corresp_acc }} </li>
+                <li> ИНН: {{ payment_details.plot_number.snt.inn }} </li>
+                <li> Плательщик: {{ last_name }} {{ first_name }} {{ middle_name }} </li>
+                <li> Адрес плательщика: {{ payer_address }} </li>
+                <li> Детали платежа: {{ purpose }} </li>
+                <li> Сумма: {{ payment_details.sum_tot }} </li>
+            </ul>
         	{% qr_from_text qr_text size="T" image_format="png" %}
         {% else %}
         	<p> Запись отсутсвтует или недоступна. </p>
