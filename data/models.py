@@ -556,7 +556,7 @@ class ElectricityPayments(models.Model):
         if length == 1 and self.record_status == 'n':
             em_model_type = self.plot_number.electrical_counter.model_type
             if em_model_type == 'T1':
-                self.t1_prev = 0
+                self.t1_prev = self.t1_new
                 self.t1_cons = 0
                 self.t1_amount = 0
                 self.sum_tot = 0
@@ -567,8 +567,8 @@ class ElectricityPayments(models.Model):
                 self.record_status = 'i'
                 self.save()
             elif em_model_type == 'T2':
-                self.t1_prev = 0
-                self.t2_prev = 0
+                self.t1_prev = self.t1_new
+                self.t2_prev = self.t2_new
                 self.t1_cons = 0
                 self.t2_cons = 0
                 self.t1_amount = 0
@@ -603,6 +603,8 @@ class ElectricityPayments(models.Model):
             self.t2_amount = self.t2_cons * current_rate_obj.t2_rate
             self.sum_tot = self.t1_amount + self.t2_amount
             self.save(modify=True)
+        elif not fill_n_record:
+            self.set_initial()
         else:
             return False # raise an error
 
@@ -642,12 +644,15 @@ class ElectricityPayments(models.Model):
         n_records = all_obj.filter(record_status__exact='n')
         p_records = all_obj.filter(record_status__exact='p')
         modify = kwargs.pop('modify', False)
+        # Check if user try to add n-record while n or p records exist in db
         if self.record_status == 'n' and not modify and\
             (len(n_records) > 0 or len(p_records) > 0):
             # Create error message
             error = "Невозможно сохранить новые показания."
+            # Error 1
             if len(n_records) > 0:
                 error += "\nУ вас уже есть запись с новыми показаниями."
+            # Error 2
             if len(p_records) > 0:
                 error += "\nУ вас уже есть оплаченный взнос ожидающий \
                             подтверждения оплаты."
