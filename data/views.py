@@ -107,7 +107,7 @@ def user_payment_details_view(request, plot_num, pk):
         return render(request, 'error_page.html', context=context)
     # Get plot instance from db
     try:
-        plot = LandPlot.objects.get(id=plot_num)
+        plot = LandPlot.objects.get(plot_number=plot_num)
     except LandPlot.DoesNotExist:
         error_message = "Участка с номером {} нет в базе данных.".format(plot_num)
         context = {

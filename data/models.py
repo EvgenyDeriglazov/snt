@@ -116,7 +116,7 @@ class Snt(models.Model):
 class LandPlot(models.Model):
     """Model representing a land plot with basic information
     such as plot number (unique), area, owners (many-to-many), 
-    snt (fk), electric counter (one-to-one)."""
+    snt (fk), electrical counter (one-to-one), user."""
     plot_number = models.CharField(
         "Номер участка",
         max_length=10,
