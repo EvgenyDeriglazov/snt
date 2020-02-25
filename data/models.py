@@ -406,7 +406,7 @@ class ElectricityPayments(models.Model):
     class Meta:
         verbose_name = "электроэнергия"
         verbose_name_plural = "электроэнергия"
-        unique_together = ['record_date', 'plot_number']
+        #unique_together = ['record_date', 'plot_number']
 
     def __str__(self):
         """String for representing the Model object."""
