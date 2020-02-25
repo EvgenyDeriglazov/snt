@@ -282,7 +282,7 @@ def user_plot_electricity_payments_view(request, plot_num):
         return render(request, 'error_page.html', context=context)
     # Get requested plot instance
     try:
-        land_plot = land_plot_query_set.filter(plot_number__exact=plot_num).get()
+        land_plot = land_plot_query_set.get(plot_number=plot_num)
     except LandPlot.DoesNotExist:
         error_message = "У вас нет участка с таким номером."
         context = {
@@ -316,10 +316,9 @@ def user_plot_electricity_payments_view(request, plot_num):
                 }
             return render(context, 'error_page.html', context=context)
     else:
-        snt_name = land_plot_query_set.filter(
-            plot_number__exact=plot_num).get()
+        snt_name = land_plot.snt
         context = {
-            'snt_name': snt_name.snt,
+            'snt_name': snt_name,
             'plot_number': plot_num,
             'no_records': 'У вас еще нет показаний счетчика.',
             }
