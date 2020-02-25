@@ -414,7 +414,10 @@ class ElectricityPayments(models.Model):
 
     def get_absolute_url(self):
         """Returns the url to access a detail record for this model data."""
-        return reverse('payment-details', args=[str(self.id)])
+        return reverse('payment-details', kwargs={
+            'plot_num': self.plot_number,
+            'pk': self.id,
+            })
 
     # Re-use functions for model instance basic operation functions
     def get_i_record(self):

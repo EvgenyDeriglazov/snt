@@ -114,7 +114,6 @@ def user_payment_details_view(request, plot_num, pk):
             'error_message': error_message,
             }
         return render(request, 'error_page.html', context=context)
-    plot1 = payment_details.plot_number
     # Get content from get_qr_code() function
     context, do_render = get_qr_code(current_user, plot_num, payment_details, rate)
     # Check it requested data belongs to current user and land plot
