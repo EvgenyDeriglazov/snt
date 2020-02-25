@@ -5,8 +5,8 @@
         <p>Детали платежа.</p>
         {% if payment_details %}
         	<p> {{ payment_details }} </p>
+        	{% qr_from_text qr_text size="T" image_format="png" %}
         {% else %}
         	<p> Запись отсутсвтует или недоступна. </p>
         {% endif %}
-        {% qr_from_text qr_text size="T" image_format="png" %}
 {% endblock %}
