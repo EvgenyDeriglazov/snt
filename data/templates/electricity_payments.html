@@ -10,8 +10,10 @@
   		        <tr>
   			      <th> Дата показаний </th>
   			      <th> Статус </th>
-              <th> День(квт/ч) </th>
-              <th> Ночь(квт/ч) </th>
+              <th> Показания квт/ч (день) </th>
+              <th> Показания квт/ч (ночь) </th>
+              <th> Потрачено квт/ч (день) </th>
+              <th> Потрачено квт/ч (ночь) </th>
               <th> Сумма день </th>
               <th> Сумма ночь </th>
   			      <th> Итого </th>
@@ -20,6 +22,8 @@
 	  	        <tr>
 	  	        <td><a href="{% url 'payment-details' plot_number payment.id %}"> {{ payment.record_date }} </a></td>
   			      <td>{{ payment.get_record_status_display }}</td>
+              <td>{{ payment.t1_new|default_if_none:"-" }}</td>
+              <td>{{ payment.t2_new|default_if_none:"-" }}</td>
   			      <td>{{ payment.t1_cons|default_if_none:"-"}}</td>
   			      <td>{{ payment.t2_cons|default_if_none:"-"}}</td>
   			      <td>{{ payment.t1_amount|default_if_none:"-"}}</td>
