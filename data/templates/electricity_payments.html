@@ -35,10 +35,10 @@
               {% elif no_records %}
               <p>{{ no_records }}</p>
               {% endif %}
-            {% elif land_plot_query_set %}
+            {% elif user_land_plots %}
             <p>Выберите участок.</p>
             <table>
-              {% for land_plot in land_plot_query_set %}
+              {% for land_plot in user_land_plots %}
               <tr>
               <td>
               <a href="{% url 'plot-electricity-payments' land_plot.plot_number %}">Участок № {{ land_plot.plot_number }}</a>

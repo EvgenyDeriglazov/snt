@@ -1,8 +1,7 @@
 {% extends "base_generic.html" %}
 
 {% block content %}
-  <h1>СНТ</h1>
-    <p>Добро пожаловать на сайт разработанный <em>z@rg systems</em>!</p>
+    <p>СНТ {{ snt_name }} </p>
         <p>Внесение новых показаний счетчика для участка номер {{ plot_number }}.
         <br>Тип счетчика {{ el_counter_type_disp|lower }}.</br> 
         </p>

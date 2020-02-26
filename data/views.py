@@ -27,20 +27,12 @@ def homepage(request):
 @login_required
 def user_payments_view(request):
     """View function to display links for each payment type."""
-    current_user = request.user
-    land_plot_query_set = current_user.landplot_set.all() 
-    if len(land_plot_query_set) == 0:
-        error_message = "У вас еще нет ни одного участка."
-        context = {
-            'error_message': error_message,
-            }
-        return render(request, 'error_page.html', context=context)
-    else:
-        snt_name = land_plot_query_set[0].snt
-        context = {
-            'snt_name': snt_name,
-            }
-        return render(request, 'user_payments.html', context=context)
+    snt = Snt.objects.get(id=1)
+    snt_name = snt.name
+    context = {
+        'snt_name': snt_name,
+        }
+    return render(request, 'user_payments.html', context=context)
 
 @login_required
 def user_payment_edit_view(request, pk):
@@ -105,22 +97,13 @@ def user_payment_details_view(request, plot_num, pk):
             'error_message': error_message,
             }
         return render(request, 'error_page.html', context=context)
-    # Get plot instance from db
-    try:
-        plot = LandPlot.objects.get(plot_number=plot_num)
-    except LandPlot.DoesNotExist:
-        error_message = "Участка с номером {} нет в базе данных.".format(plot_num)
-        context = {
-            'error_message': error_message,
-            }
-        return render(request, 'error_page.html', context=context)
     # Get content from get_qr_code() function
     context, do_render = get_qr_code(current_user, plot_num, payment_details, rate)
     # Check it requested data belongs to current user and land plot
-    if payment_details.plot_number.user == current_user and \
-        context['payment_details'].plot_number.user == current_user and \
-        payment_details.plot_number == plot and \
-        context['payment_details'].plot_number == plot:
+    if payment_details.plot_number.user == request.user and \
+        context['payment_details'].plot_number.user == request.user and \
+        payment_details.plot_number.plot_number == plot_num and \
+        context['payment_details'].plot_number.plot_number == plot_num:
         # If no internal mistake in get_qr_code() - render page
         if do_render == True:
             return render(request, 'payment_details.html', context=context)
@@ -138,7 +121,6 @@ def user_payment_details_view(request, plot_num, pk):
 def user_new_payment_view(request, plot_num):
     """View function to display form for new electricity payment
     record."""
-    current_user = request.user
     # Get requested land plot instance form db or return error page
     try:
         land_plot = LandPlot.objects.get(plot_number=plot_num)
@@ -148,11 +130,12 @@ def user_new_payment_view(request, plot_num):
             'error_message': error_message,
             }
         return render(request, 'error_page.html', context=context)
+    snt_name = land_plot.snt.name
     # Get electrical counter model type and model type description
     el_counter_type = land_plot.electrical_counter.model_type
     el_counter_type_disp = land_plot.electrical_counter.get_model_type_display()
     # If user tries to POST data
-    if request.method == 'POST' and land_plot.user == current_user:
+    if request.method == 'POST' and land_plot.user == request.user:
         # Instantiate form for T1 electric counter type with user data
         if el_counter_type == 'T1':
             form = T1NewElectricityPaymentForm(request.POST)
@@ -171,6 +154,7 @@ def user_new_payment_view(request, plot_num):
                     # Prepare error message and context
                     error_message_list = validation_error.message.split("\n")
                     context = {
+                        'snt_name': snt_name,
                         'plot_number': plot_num,
                         'form': form,
                         'error_message_list': error_message_list,
@@ -203,6 +187,7 @@ def user_new_payment_view(request, plot_num):
                     # Prepare error message and context
                     error_message_list = validation_error.message.split("\n")
                     context = {
+                        'snt_name': snt_name,
                         'plot_number': plot_num,
                         'form': form,
                         'error_message_list': error_message_list,
@@ -216,9 +201,9 @@ def user_new_payment_view(request, plot_num):
                     )
     else:
         # Instantiate empty form for certain electric counter type
-        if el_counter_type == 'T1' and land_plot.user == current_user:
+        if el_counter_type == 'T1' and land_plot.user == request.user:
             form = T1NewElectricityPaymentForm()
-        elif el_counter_type == 'T2' and land_plot.user == current_user:
+        elif el_counter_type == 'T2' and land_plot.user == request.user:
             form = T2NewElectricityPaymentForm()
         # If counter type is not correct render error page
         elif el_counter_type != 'T1' and el_counter_type != 'T2':
@@ -228,7 +213,7 @@ def user_new_payment_view(request, plot_num):
                 }
             return render(request, 'error_page.html', context=context)
         # If land plot does not belong to current user render error page
-        elif land_plot.user != current_user:
+        elif land_plot.user != request.user:
             error_message = "У вас нет участка с номером {}.".format(plot_num)
             context = {
                 'error_message': error_message,
@@ -237,6 +222,7 @@ def user_new_payment_view(request, plot_num):
 
     # Context for empty form
     context = {
+        'snt_name': snt_name,
         'plot_number': plot_num,
         'form': form,
         'el_counter_type_disp': el_counter_type_disp,
@@ -250,31 +236,35 @@ def user_electricity_payments_view(request):
     to certain land plot electricity payment page or
     if a user has only one land plot it will redicrect to
     user_plot_electricity_payments_view."""
-    current_user = request.user
-    land_plot_query_set = current_user.landplot_set.all() 
+    user_land_plots = LandPlot.objects.filter(user__exact=request.user)
     # If user has only 1 land plot,redirect to user_plot_electricity_payments_view
-    if len(land_plot_query_set) == 1:
-        plot_number = land_plot_query_set[0].plot_number
+    if len(user_land_plots) == 1:
+        plot_number = user_land_plots[0].plot_number
         return HttpResponseRedirect(
             reverse('plot-electricity-payments', args=[plot_number])
             )
     # If user has more than one land plot
-    elif len(land_plot_query_set) > 1:
+    elif len(user_land_plots) > 1:
         context = {
-            'snt_name': land_plot_query_set[0].snt,
-            'land_plot_query_set': land_plot_query_set,
+            'snt_name': user_land_plots[0].snt,
+            'user_land_plots': user_land_plots,
             }
         return render(request, 'electricity_payments.html', context=context)
+    else:
+        error_message = "У вас еще нет ни одного участка."
+        context = {
+            'error_message': error_message,
+            }
+        return render(request, 'error_page.html', context=context)
 
 @login_required
 def user_plot_electricity_payments_view(request, plot_num):
     """View function to display electricity payments for certain
     plot only."""
     # Get current user from request and all his land plots
-    current_user = request.user
-    land_plot_query_set = current_user.landplot_set.all()
+    user_land_plots = LandPlot.objects.filter(user__exact=request.user)
     # Check if current user has any land plots
-    if len(land_plot_query_set) == 0:
+    if len(user_land_plots) == 0:
         error_message = "У вас еще нет ни одного участка."
         context = {
             'error_message': error_message,
@@ -282,7 +272,7 @@ def user_plot_electricity_payments_view(request, plot_num):
         return render(request, 'error_page.html', context=context)
     # Get requested plot instance
     try:
-        land_plot = land_plot_query_set.get(plot_number=plot_num)
+        land_plot = user_land_plots.get(plot_number=plot_num)
     except LandPlot.DoesNotExist:
         error_message = "У вас нет участка с таким номером."
         context = {
@@ -302,7 +292,7 @@ def user_plot_electricity_payments_view(request, plot_num):
         return render(request, 'error_page.html', context=context)
     # Check if payments_list belongs to current user, otherwise raise error 
     if len(payments_list) > 0:
-        if payments_list[0].plot_number.user == current_user:
+        if payments_list[0].plot_number.user == request.user:
             snt_name = payments_list[0].plot_number.snt
             context = {
                 'snt_name': snt_name,
@@ -403,4 +393,5 @@ def get_qr_code(current_user, plot_num, payment_details, rate):
             }
         do_render = False
     return context, do_render
+
 
