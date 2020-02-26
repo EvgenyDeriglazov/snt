@@ -18,7 +18,7 @@ admin.site.empty_value_display = ''
 @admin.register(ElectricityPayments)
 class ElectricityPaymentsAdmin(admin.ModelAdmin):
     list_display = (
-        'plot_number',
+        'land_plot',
         'record_date',
         't1_cons',
         't2_cons',
@@ -27,4 +27,4 @@ class ElectricityPaymentsAdmin(admin.ModelAdmin):
         't2_amount',
         'sum_tot',
         )
-    list_filter = ('plot_number',)
+    list_filter = ('land_plot',)

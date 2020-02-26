@@ -305,7 +305,7 @@ class ElectricalCounter(models.Model):
 class ElectricityPayments(models.Model):
     """Model representing electic counter readings to keep records and
     calculate payment for each land plot."""
-    plot_number = models.ForeignKey(
+    land_plot = models.ForeignKey(
         LandPlot,
         on_delete=models.SET_NULL,
         null=True,
@@ -406,26 +406,26 @@ class ElectricityPayments(models.Model):
     class Meta:
         verbose_name = "электроэнергия"
         verbose_name_plural = "электроэнергия"
-        #unique_together = ['record_date', 'plot_number']
+        #unique_together = ['record_date', 'land_plot']
 
     def __str__(self):
         """String for representing the Model object."""
-        return self.plot_number.plot_number + ' ' + str(self.record_date)
+        return self.land_plot.plot_number + ' ' + str(self.record_date)
 
     def get_absolute_url(self):
         """Returns the url to access a detail record for this model data."""
         return reverse('payment-details', kwargs={
-            'plot_num': self.plot_number,
+            'plot_num': self.land_plot,
             'pk': self.id,
             })
 
     # Re-use functions for model instance basic operation functions
     def get_i_record(self):
         """Returns row from database with record_status='i',
-        initial record for particular (self.plot_number)."""
+        initial record for particular (self.land_plot)."""
         try:
             i_record_obj = ElectricityPayments.objects.get(
-                Q(plot_number__exact=self.plot_number),
+                Q(land_plot__exact=self.land_plot),
                 Q(record_date__lte=date.today()),
                 Q(record_status__exact='i'),
                 )
@@ -435,10 +435,10 @@ class ElectricityPayments(models.Model):
 
     def get_n_record(self):
         """Returns row from database with record_status='n',
-        new record for particular (self.plot_number)."""
+        new record for particular (self.land_plot)."""
         try:
             n_record_obj = ElectricityPayments.objects.get(
-                Q(plot_number__exact=self.plot_number),
+                Q(land_plot__exact=self.land_plot),
                 Q(record_date__lte=date.today()),
                 Q(record_status__exact='n'),
                 )
@@ -448,10 +448,10 @@ class ElectricityPayments(models.Model):
 
     def get_p_record(self):
         """Returns row from database with record_status='p'
-        (payed via bank) for self.plot_number."""
+        (payed via bank) for self.land_plot."""
         try:
             p_record_obj = ElectricityPayments.objects.get(
-                Q(plot_number__exact=self.plot_number),
+                Q(land_plot__exact=self.land_plot),
                 Q(record_date__lte=date.today()),
                 Q(record_status__exact='p'),
                 )
@@ -461,10 +461,10 @@ class ElectricityPayments(models.Model):
 
     def get_c_record(self):
         """Returns row from database with record_status='c'
-        (last confirmed payment) for self.plot_number."""
+        (last confirmed payment) for self.land_plot."""
         try:
             c_record_obj = ElectricityPayments.objects.filter(
-                plot_number__exact=self.plot_number,
+                land_plot__exact=self.land_plot,
                 record_status__exact='c',
                 ).latest('record_date')
         except:
@@ -489,11 +489,11 @@ class ElectricityPayments(models.Model):
             return False # Raise Error Here
         # Query all 'n' and 'p' records
         n_records = ElectricityPayments.objects.filter(
-            plot_number__exact=self.plot_number,
+            land_plot__exact=self.land_plot,
             record_status__exact='n'
             )
         p_records = ElectricityPayments.objects.filter(
-            plot_number__exact=self.plot_number,
+            land_plot__exact=self.land_plot,
             record_status__exact='p'
             )
         # Check if 'n' and 'p' records exist
@@ -502,7 +502,7 @@ class ElectricityPayments(models.Model):
         elif len(p_records) > 0:
             return False # Raise Error Here
         # Query data objects
-        em_model_type = self.plot_number.electrical_counter.model_type
+        em_model_type = self.land_plot.electrical_counter.model_type
         c_record = self.get_c_record()
         i_record = self.get_i_record()
         # Conditional for T1 and T2 types filling
@@ -550,11 +550,11 @@ class ElectricityPayments(models.Model):
         """Set the status of the row (db entry) to initial 
         (record_status = 'i')."""
         all_obj = ElectricityPayments.objects.filter(
-            plot_number__exact=self.plot_number,
+            land_plot__exact=self.land_plot,
         )
         length = len(all_obj)
         if length == 1 and self.record_status == 'n':
-            em_model_type = self.plot_number.electrical_counter.model_type
+            em_model_type = self.land_plot.electrical_counter.model_type
             if em_model_type == 'T1':
                 self.t1_prev = self.t1_new
                 self.t1_cons = 0
@@ -586,7 +586,7 @@ class ElectricityPayments(models.Model):
         account during all calculations and db row pupulating."""
         fill_n_record = self.fill_n_record()
         current_rate_obj = self.get_current_rate()
-        em_model_type = self.plot_number.electrical_counter.model_type
+        em_model_type = self.land_plot.electrical_counter.model_type
         if em_model_type == 'T1' and fill_n_record and current_rate_obj:
             # Calculate consumption, amount (T1 rate) and 'sum_tot'
             self.t1_cons = self.t1_new - self.t1_prev
@@ -639,7 +639,7 @@ class ElectricityPayments(models.Model):
 
     def save(self, *args, **kwargs):
         all_obj = ElectricityPayments.objects.filter(
-            plot_number__exact=self.plot_number,
+            land_plot__exact=self.land_plot,
             )
         n_records = all_obj.filter(record_status__exact='n')
         p_records = all_obj.filter(record_status__exact='p')

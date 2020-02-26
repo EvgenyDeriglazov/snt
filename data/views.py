@@ -51,7 +51,7 @@ def user_payment_edit_view(request, pk):
             }
         return render(request, 'error_page.html', context=context)
     if payment_edit.record_status == 'n' and \
-        payment_details.plot_number.user == current_user:
+        payment_details.land_plot.user == current_user:
         context = {
             'payment_edit': payment_edit,
             }
@@ -64,7 +64,7 @@ def user_payment_edit_view(request, pk):
             'error_message': error_message,
             }
         return render(request, 'error_page.html', context=context)
-    elif payment_details.plot_number.user != current_user:
+    elif payment_details.land_plot.user != current_user:
         error_message = "Выбранные показания относятся к другому участку."
         context = {
             'error_message': error_message,
@@ -100,10 +100,10 @@ def user_payment_details_view(request, plot_num, pk):
     # Get content from get_qr_code() function
     context, do_render = get_qr_code(current_user, plot_num, payment_details, rate)
     # Check it requested data belongs to current user and land plot
-    if payment_details.plot_number.user == request.user and \
-        context['payment_details'].plot_number.user == request.user and \
-        payment_details.plot_number.plot_number == plot_num and \
-        context['payment_details'].plot_number.plot_number == plot_num:
+    if payment_details.land_plot.user == request.user and \
+        context['payment_details'].land_plot.user == request.user and \
+        payment_details.land_plot.plot_number == plot_num and \
+        context['payment_details'].land_plot.plot_number == plot_num:
         # If no internal mistake in get_qr_code() - render page
         if do_render == True:
             return render(request, 'payment_details.html', context=context)
@@ -144,7 +144,7 @@ def user_new_payment_view(request, plot_num):
                 t1_new_cleaned = form.cleaned_data['t1_new']
                 try:
                     new_record = ElectricityPayments.objects.create(
-                        plot_number=land_plot,
+                        land_plot=land_plot,
                         t1_new=t1_new_cleaned,
                         )
                     # Calculate payment for new record
@@ -176,7 +176,7 @@ def user_new_payment_view(request, plot_num):
                 t2_new_cleaned = form.cleaned_data['t2_new']
                 try:
                     new_record = ElectricityPayments.objects.create(
-                        plot_number=land_plot,
+                        land_plot=land_plot,
                         t1_new=t1_new_cleaned,
                         t2_new=t2_new_cleaned,
                         )
@@ -282,7 +282,7 @@ def user_plot_electricity_payments_view(request, plot_num):
     # Get payments list or raise an error
     try:
         payments_list = ElectricityPayments.objects.filter(
-            plot_number__exact=land_plot
+            land_plot__exact=land_plot
             ).order_by('-record_date')
     except ElectricityPayments.DoesNotExist:
         error_message = "У вас еще нет ни одного показания."
@@ -292,8 +292,8 @@ def user_plot_electricity_payments_view(request, plot_num):
         return render(request, 'error_page.html', context=context)
     # Check if payments_list belongs to current user, otherwise raise error 
     if len(payments_list) > 0:
-        if payments_list[0].plot_number.user == request.user:
-            snt_name = payments_list[0].plot_number.snt
+        if payments_list[0].land_plot.user == request.user:
+            snt_name = payments_list[0].land_plot.snt
             context = {
                 'snt_name': snt_name,
                 'plot_number': plot_num,
@@ -322,19 +322,19 @@ def get_qr_code(current_user, plot_num, payment_details, rate):
     qr_text = "ST00012|Name=Садоводческое некоммерческое товаричество{}|\
         PersonalAcc={}|BankName={}|BIC={}|CorrespAcc={}|INN={}|LastName={}|\
         FirstName={}|MiddleName={}|Purpose={}|PayerAddress={}|Sum={}"
-    snt_name = payment_details.plot_number.snt
+    snt_name = payment_details.land_plot.snt
     # Check if requested payment record belonges to current user
-    if payment_details.plot_number.user == current_user:
-        name = payment_details.plot_number.snt
-        p_acc = payment_details.plot_number.snt.personal_acc
-        b_name = payment_details.plot_number.snt.bank_name
-        bic = payment_details.plot_number.snt.bic
-        cor_acc = payment_details.plot_number.snt.corresp_acc
-        inn = payment_details.plot_number.snt.inn
-        last_name = payment_details.plot_number.owner.last_name
-        first_name = payment_details.plot_number.owner.first_name
-        middle_name = payment_details.plot_number.owner.middle_name
-        e_counter_type = payment_details.plot_number.electrical_counter.model_type
+    if payment_details.land_plot.user == current_user:
+        name = payment_details.land_plot.snt
+        p_acc = payment_details.land_plot.snt.personal_acc
+        b_name = payment_details.land_plot.snt.bank_name
+        bic = payment_details.land_plot.snt.bic
+        cor_acc = payment_details.land_plot.snt.corresp_acc
+        inn = payment_details.land_plot.snt.inn
+        last_name = payment_details.land_plot.owner.last_name
+        first_name = payment_details.land_plot.owner.first_name
+        middle_name = payment_details.land_plot.owner.middle_name
+        e_counter_type = payment_details.land_plot.electrical_counter.model_type
         if e_counter_type == 'T1':
             t1_new = payment_details.t1_new
             t1_prev = payment_details.t1_prev
