@@ -3,18 +3,18 @@
 {% block content %}
 		<p>СНТ {{ snt_name }}.</p>     
         <p>Детали платежа.</p>
-        {% if payment_details %}
+        {% if el_payment_obj %}
             <ul style="list-style-type:none;">
-                <li> СНТ {{ payment_details.land_plot.snt }} </li>
-                <li> р\с: {{ payment_details.land_plot.snt.personal_acc }} </li>
-                <li> {{ payment_details.land_plot.snt.bank_name }} </li>
-                <li> БИК: {{ payment_details.land_plot.snt.bic }} </li>
-                <li> корр. счет: {{ payment_details.land_plot.snt.corresp_acc }} </li>
-                <li> ИНН: {{ payment_details.land_plot.snt.inn }} </li>
+                <li> СНТ {{ el_payment_obj.land_plot.snt }} </li>
+                <li> р\с: {{ el_payment_obj.land_plot.snt.personal_acc }} </li>
+                <li> {{ el_payment_obj.land_plot.snt.bank_name }} </li>
+                <li> БИК: {{ el_payment_obj.land_plot.snt.bic }} </li>
+                <li> корр. счет: {{ el_payment_obj.land_plot.snt.corresp_acc }} </li>
+                <li> ИНН: {{ el_payment_obj.land_plot.snt.inn }} </li>
                 <li> Плательщик: {{ last_name }} {{ first_name }} {{ middle_name }} </li>
                 <li> Адрес плательщика: {{ payer_address }} </li>
                 <li> Детали платежа: {{ purpose }} </li>
-                <li> Сумма: {{ payment_details.sum_tot }} </li>
+                <li> Сумма: {{ el_payment_obj.sum_tot }} </li>
             </ul>
         	{% qr_from_text qr_text size="T" image_format="png" %}
         {% else %}

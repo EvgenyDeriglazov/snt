@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from data.forms import T1NewElectricityPaymentForm, T2NewElectricityPaymentForm
 from django.utils.translation import gettext_lazy as _
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, PermissionDenied
 import datetime
 
 # Create your views here.
@@ -76,46 +76,11 @@ def user_payment_edit_view(request, pk):
 def user_payment_details_view(request, plot_num, pk):
     """View function to display detailed information about
     electricity payment record."""
-    current_user = request.user
-    # Get ElectricityPayments object from db
-    try:
-        payment_details = ElectricityPayments.objects.get(id=pk)
-    except ElectricityPayments.DoesNotExist:
-        error_message = "Запись запрашиваемых показаний отсутствует."
-        context = {
-            'error_message': error_message,
-            }
-        return render(request, 'error_page.html', context=context)
-    # Get Rate object from db which corresponds to payment_details.date    
-    try:
-        rate = Rate.objects.filter(
-            intro_date__lte=payment_details.record_date,
-            ).latest('intro_date')
-    except Rate.DoesNotExist:
-        error_message = "Запись тарифа для данных показаний отсутствует."
-        context = {
-            'error_message': error_message,
-            }
-        return render(request, 'error_page.html', context=context)
-    # Get content from get_qr_code() function
-    context, do_render = get_qr_code(current_user, plot_num, payment_details, rate)
-    # Check it requested data belongs to current user and land plot
-    if payment_details.land_plot.user == request.user and \
-        context['payment_details'].land_plot.user == request.user and \
-        payment_details.land_plot.plot_number == plot_num and \
-        context['payment_details'].land_plot.plot_number == plot_num:
-        # If no internal mistake in get_qr_code() - render page
-        if do_render == True:
-            return render(request, 'payment_details.html', context=context)
-        # If there is a mistake in get_qr_code() - render error page
-        elif do_render == False:
-            return render(request, 'error_page.html', context=context)
-    else:
-        error_message = "Запрашиваемые показания не относятся к вашему участку."
-        context = {
-            'error_message': error_message,
-            }
-        return render(request, 'error_page.html', context=context)
+    el_payment_obj = get_electricity_payment_object_or_404(pk, plot_num)
+    check_user_or_404(request, el_payment_obj)
+    rate_obj = get_rate_object_or_404(el_payment_obj)
+    context = electricity_payment_qr_code(plot_num, el_payment_obj, rate_obj)
+    return render(request, 'payment_details.html', context=context)
 
 @login_required
 def user_new_payment_view(request, plot_num):
@@ -316,68 +281,63 @@ def user_plot_electricity_payments_view(request, plot_num):
     return render(request, 'electricity_payments.html', context=context)
 
 # Reusable functions
-def get_qr_code(current_user, plot_num, payment_details, rate):
+def electricity_payment_qr_code(plot_num, el_payment_obj, rate_obj):
     """Function to prepare qr code and return result to view
     for rendering web page (context{}, correct(bolean))."""
     qr_text = "ST00012|Name=Садоводческое некоммерческое товаричество{}|\
         PersonalAcc={}|BankName={}|BIC={}|CorrespAcc={}|INN={}|LastName={}|\
         FirstName={}|MiddleName={}|Purpose={}|PayerAddress={}|Sum={}"
-    snt_name = payment_details.land_plot.snt
-    # Check if requested payment record belonges to current user
-    if payment_details.land_plot.user == current_user:
-        name = payment_details.land_plot.snt
-        p_acc = payment_details.land_plot.snt.personal_acc
-        b_name = payment_details.land_plot.snt.bank_name
-        bic = payment_details.land_plot.snt.bic
-        cor_acc = payment_details.land_plot.snt.corresp_acc
-        inn = payment_details.land_plot.snt.inn
-        last_name = payment_details.land_plot.owner.last_name
-        first_name = payment_details.land_plot.owner.first_name
-        middle_name = payment_details.land_plot.owner.middle_name
-        e_counter_type = payment_details.land_plot.electrical_counter.model_type
-        if e_counter_type == 'T1':
-            t1_new = payment_details.t1_new
-            t1_prev = payment_details.t1_prev
-            t1_cons = payment_details.t1_cons
-            t1_rate = rate.t1_rate
-            t1_amount = payment_details.t1_amount
-            sum_tot = payment_details.sum_tot
-            purpose = "Членские взносы за э/энергию, однотарифный/{}-{}/{},\
-                {}x{}/{}. Итого/{}." 
-            purpose = purpose.format(
-                t1_new, t1_prev, t1_cons, t1_cons,
-                t1_rate, t1_amount, sum_tot,
-                )
-        elif e_counter_type == 'T2':
-            t1_new = payment_details.t1_new
-            t2_new = payment_details.t2_new
-            t1_prev = payment_details.t1_prev
-            t2_prev = payment_details.t2_prev
-            t1_cons = payment_details.t1_cons
-            t2_cons = payment_details.t2_cons
-            t1_rate = rate.t1_rate
-            t2_rate = rate.t2_rate
-            t1_amount = payment_details.t1_amount
-            t2_amount = payment_details.t2_amount
-            sum_tot = payment_details.sum_tot
-            purpose = "Членские взносы за э/энергию, T1/{}-{}/{},\
-                T2/{}-{}/{}, T1/{}x{}/{}, T2/{}x{}/{}. Итого/{}." 
-            purpose = purpose.format(
-                t1_new, t1_prev, t1_cons,
-                t2_new, t2_prev, t2_cons,
-                t1_cons, t1_rate, t1_amount,
-                t2_cons, t2_rate, t2_amount,
-                sum_tot,
-                )
+    snt_name = el_payment_obj.land_plot.snt
+    name = el_payment_obj.land_plot.snt
+    p_acc = el_payment_obj.land_plot.snt.personal_acc
+    b_name = el_payment_obj.land_plot.snt.bank_name
+    bic = el_payment_obj.land_plot.snt.bic
+    cor_acc = el_payment_obj.land_plot.snt.corresp_acc
+    inn = el_payment_obj.land_plot.snt.inn
+    last_name = el_payment_obj.land_plot.owner.last_name
+    first_name = el_payment_obj.land_plot.owner.first_name
+    middle_name = el_payment_obj.land_plot.owner.middle_name
+    e_counter_type = el_payment_obj.land_plot.electrical_counter.model_type
+    if e_counter_type == 'T1':
+        t1_new = el_payment_obj.t1_new
+        t1_prev = el_payment_obj.t1_prev
+        t1_cons = el_payment_obj.t1_cons
+        t1_rate = rate_obj.t1_rate
+        t1_amount = el_payment_obj.t1_amount
+        sum_tot = el_payment_obj.sum_tot
+        purpose = "Членские взносы за э/энергию, однотарифный/{}-{}/{},\
+            {}x{}/{}. Итого/{}." 
+        purpose = purpose.format(
+            t1_new, t1_prev, t1_cons, t1_cons,
+            t1_rate, t1_amount, sum_tot,
+            )
+    elif e_counter_type == 'T2':
+        t1_new = el_payment_obj.t1_new
+        t2_new = el_payment_obj.t2_new
+        t1_prev = el_payment_obj.t1_prev
+        t2_prev = el_payment_obj.t2_prev
+        t1_cons = el_payment_obj.t1_cons
+        t2_cons = el_payment_obj.t2_cons
+        t1_rate = rate_obj.t1_rate
+        t2_rate = rate_obj.t2_rate
+        t1_amount = el_payment_obj.t1_amount
+        t2_amount = el_payment_obj.t2_amount
+        sum_tot = el_payment_obj.sum_tot
+        purpose = "Членские взносы за э/энергию, T1/{}-{}/{},\
+            T2/{}-{}/{}, T1/{}x{}/{}, T2/{}x{}/{}. Итого/{}." 
+        purpose = purpose.format(
+            t1_new, t1_prev, t1_cons, t2_new, t2_prev, t2_cons, t1_cons,
+            t1_rate, t1_amount, t2_cons, t2_rate, t2_amount, sum_tot,
+            )
         payer_address = "участок №{}, СНТ {}".format(plot_num, name)   
-        sum_tot = payment_details.sum_tot * 100
+        sum_tot = el_payment_obj.sum_tot * 100
         qr_text = qr_text.format(
             name, p_acc, b_name, bic, cor_acc,inn, last_name, first_name,
             middle_name, purpose, payer_address, sum_tot,
             )
         context = {
             'snt_name': snt_name,
-            'payment_details': payment_details,
+            'el_payment_obj': el_payment_obj,
             'qr_text': qr_text,
             'payer_address': payer_address,
             'purpose': purpose,
@@ -385,13 +345,29 @@ def get_qr_code(current_user, plot_num, payment_details, rate):
             'first_name': first_name,
             'middle_name': middle_name,
             }
-        do_render = True
-    else:
-        error_message = "Запрашиваемые показания не относятся к вашему участку."
-        context = {
-            'error_message': error_message,
-            }
-        do_render = False
-    return context, do_render
+    return context
 
+def get_electricity_payment_object_or_404(pk, plot_num):
+    try:
+        el_payment_obj = ElectricityPayments.objects.filter(
+            land_plot__plot_number__exact=plot_num
+            ).get(id=pk)
+    except ElectricityPayments.DoesNotExist:
+        raise Http404("get_electricity_payment_object_or_404():\
+        exception ElectricityPayments.DoesNotExist")
+    return el_payment_obj
 
+def get_rate_object_or_404(el_payment_obj):
+    try:
+        rate_obj = Rate.objects.filter(
+            intro_date__lte=el_payment_obj.record_date,
+            ).latest('intro_date')
+    except Rate.DoesNotExist:
+        raise Http404("get_rate_object_or_404():\
+        exception Rate.DoesNotExist")
+    return rate_obj
+ 
+def check_user_or_404(request, el_payment_obj):
+    if el_payment_obj.land_plot.user != request.user:
+        raise Http404("check_user_or_404():\
+        el_payment_obj does not belong to request.user") 
