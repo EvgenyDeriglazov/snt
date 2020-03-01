@@ -11,7 +11,7 @@ import datetime
 
 # Create your views here.
 def homepage(request):
-    """View function for home page of site"""
+    """View function to display site home page"""
     num_snt = Snt.objects.all().count
     num_land_plots = LandPlot.objects.all().count
     num_users = User.objects.filter(groups__name__exact='Users').count()
@@ -78,7 +78,7 @@ def user_payment_details_view(request, plot_num, pk):
     electricity payment record."""
     el_payment_obj = get_electricity_payment_object_or_404(pk, plot_num)
     check_user_or_404(request, el_payment_obj)
-    rate_obj = get_rate_object_or_404(el_payment_obj)
+    rate_obj = get_rate_object_or_404_by_sub_func(el_payment_obj)
     context = electricity_payment_qr_code(plot_num, el_payment_obj, rate_obj)
     return render(request, 'payment_details.html', context=context)
 
@@ -348,6 +348,10 @@ def electricity_payment_qr_code(plot_num, el_payment_obj, rate_obj):
     return context
 
 def get_electricity_payment_object_or_404(pk, plot_num):
+    """Function takes ElectricityPayments primary key and plot number as
+    positional arguments and makes db query to get ElectricityPayments
+    object by primary key filtered by plot number. It returns
+    ElectricityPayment object or if object DoesNotExist raises Http404."""  
     try:
         el_payment_obj = ElectricityPayments.objects.filter(
             land_plot__plot_number__exact=plot_num
@@ -357,17 +361,49 @@ def get_electricity_payment_object_or_404(pk, plot_num):
         exception ElectricityPayments.DoesNotExist")
     return el_payment_obj
 
-def get_rate_object_or_404(el_payment_obj):
+def get_rate_object_or_404_by_sub_func(el_payment_obj):
+    """Function takes ElectricityPayments object as positional argument.
+    If ElectricityPayments.record_status == 'n' it calls
+    get_rate_object_by_record_date_or_404(), in all other cases
+    it calls get_rate_object_by_pay_date_or_404(). Function returns
+    Rate object or Http404 is raised by above mentioned functions
+    when object DoesNotExist."""
+    if el_payment_obj.record_status == 'n':
+        rate_obj = get_rate_object_by_record_date_or_404(el_payment_obj)
+    else:
+        rate_obj = get_rate_object_by_pay_date_or_404(el_payment_obj)
+    return rate_obj
+
+def get_rate_object_by_record_date_or_404(el_payment_obj):
+    """Function takes ElectricityPayment object as positional argument
+    and makes db query to get latest Rate object by intro_date where
+    intro_date is later or equal to ElectricityPayments.record_date."""
     try:
         rate_obj = Rate.objects.filter(
             intro_date__lte=el_payment_obj.record_date,
             ).latest('intro_date')
     except Rate.DoesNotExist:
-        raise Http404("get_rate_object_or_404():\
+        raise Http404("get_rate_object_by_record_date_or_404():\
+        exception Rate.DoesNotExist")
+    return rate_obj
+
+def get_rate_object_by_pay_date_or_404(el_payment_obj):
+    """Function takes ElectricityPayment object as positional argument
+    and makes db query to get latest Rate object by intro_date where
+    intro_date is later or equal to ElectricityPayments.pay_date."""
+    try:
+        rate_obj = Rate.objects.filter(
+            intro_date__lte=el_payment_obj.pay_date,
+            ).latest('intro_date')
+    except Rate.DoesNotExist:
+        raise Http404("get_rate_object_by_pay_date_or_404():\
         exception Rate.DoesNotExist")
     return rate_obj
  
 def check_user_or_404(request, el_payment_obj):
+    """Function checks if ElectricityPayments object belongs
+    to request.user and returns Http404 when request.user tries
+    to access other user data. """
     if el_payment_obj.land_plot.user != request.user:
         raise Http404("check_user_or_404():\
         el_payment_obj does not belong to request.user") 

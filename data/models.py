@@ -553,11 +553,12 @@ class ElectricityPayments(models.Model):
             land_plot__exact=self.land_plot,
         )
         length = len(all_obj)
-        if length == 1 and self.record_status == 'n':
+        if (length == 1 or length == 0) and self.record_status == 'n':
             em_model_type = self.land_plot.electrical_counter.model_type
             if em_model_type == 'T1':
                 self.t1_prev = self.t1_new
                 self.t1_cons = 0
+                self.pay_date = date.today()
                 self.t1_amount = 0
                 self.sum_tot = 0
                 self.t2_new = None
@@ -571,6 +572,7 @@ class ElectricityPayments(models.Model):
                 self.t2_prev = self.t2_new
                 self.t1_cons = 0
                 self.t2_cons = 0
+                self.pay_date = date.today()
                 self.t1_amount = 0
                 self.t2_amount = 0
                 self.sum_tot = 0
