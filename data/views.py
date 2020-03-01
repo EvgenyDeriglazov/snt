@@ -381,6 +381,7 @@ def get_rate_object_by_record_date_or_404(el_payment_obj):
     try:
         rate_obj = Rate.objects.filter(
             intro_date__lte=el_payment_obj.record_date,
+            rate_status__exact='c',
             ).latest('intro_date')
     except Rate.DoesNotExist:
         raise Http404("get_rate_object_by_record_date_or_404():\
