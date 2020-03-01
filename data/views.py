@@ -79,6 +79,8 @@ def user_payment_details_view(request, plot_num, pk):
     el_payment_obj = get_electricity_payment_object_or_404(pk, plot_num)
     check_user_or_404(request, el_payment_obj)
     rate_obj = get_rate_object_or_404_by_sub_func(el_payment_obj)
+    if el_payment_obj.record_status == 'n':
+        el_payment_obj.calculate_payment()
     context = electricity_payment_qr_code(plot_num, el_payment_obj, rate_obj)
     return render(request, 'payment_details.html', context=context)
 
