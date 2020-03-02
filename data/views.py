@@ -5,6 +5,7 @@ from data.models import Snt, LandPlot, ElectricityPayments, Rate
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from data.forms import T1NewElectricityPaymentForm, T2NewElectricityPaymentForm
+from data.forms import ElectricityPaymentSetPaidForm
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError, PermissionDenied
 import datetime
@@ -23,6 +24,30 @@ def homepage(request):
     }
     
     return render(request, 'index.html', context=context)
+
+@login_required
+def user_payment_set_paid_view(request, plot_num, pk):
+    """View function to display form for setting ElectricityPayments
+    record as paid.""" 
+    el_payment_obj = get_electricity_payment_object_or_404(plot_num, pk)
+    check_user_or_404(request, el_payment_obj)
+    if request.method == 'POST':
+        form = ElectricityPaymentSetPaidForm(request.POST)
+        if form.is_valid():
+            el_payment_obj.set_paid()
+            return HttpResponseRedirect(
+                reverse('plot-electricity-payments', args=[plot_num])
+                ) 
+    else:
+        form = ElectricityPaymentSetPaidForm()
+    context = {
+        'form': form,
+        }
+    return render(request, 'set_paid.html', context=context)
+
+
+
+
 
 @login_required
 def user_payments_view(request):
@@ -76,7 +101,7 @@ def user_payment_edit_view(request, pk):
 def user_payment_details_view(request, plot_num, pk):
     """View function to display detailed information about
     electricity payment record."""
-    el_payment_obj = get_electricity_payment_object_or_404(pk, plot_num)
+    el_payment_obj = get_electricity_payment_object_or_404(plot_num, pk)
     check_user_or_404(request, el_payment_obj)
     rate_obj = get_rate_object_or_404_by_sub_func(el_payment_obj)
     if el_payment_obj.record_status == 'n':
@@ -349,7 +374,7 @@ def electricity_payment_qr_code(plot_num, el_payment_obj):
             }
     return context
 
-def get_electricity_payment_object_or_404(pk, plot_num):
+def get_electricity_payment_object_or_404(plot_num, pk):
     """Function takes ElectricityPayments primary key and plot number as
     positional arguments and makes db query to get ElectricityPayments
     object by primary key filtered by plot number. It returns

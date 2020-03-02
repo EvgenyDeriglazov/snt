@@ -23,5 +23,10 @@ urlpatterns = [
     	views.user_payment_details_view,
     	name='payment-details',
     	),
+    path(
+    	'payments/electricity-payments/plot-<plot_num>/payment-<int:pk>/set-paid',
+    	views.user_payment_set_paid_view,
+    	name='payment-set-paid',
+    	),
  
 ]

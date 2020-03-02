@@ -17,7 +17,7 @@
                 <li> Сумма: {{ el_payment_obj.sum_tot }} </li>
                 <li> Статус: {{ el_payment_obj.get_record_status_display }} </li>
                 {% if el_payment_obj.pay_date == None %}
-                    <li> <a href="{% url 'homepage' %}"> Оплатить через Сбербанк Онлайн по QR коду</a></p></li>
+                    <li> <a href="{% url 'payment-set-paid' el_payment_obj.land_plot el_payment_obj.id %}"> Оплатить по QR коду</a></p></li>
                 {% else %}
                     <li> Дата оплаты: {{ el_payment_obj.pay_date }}</li>
         	        {% qr_from_text qr_text size="T" image_format="png" %}
