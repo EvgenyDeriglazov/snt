@@ -304,8 +304,8 @@ def electricity_payment_qr_code(plot_num, el_payment_obj, rate_obj):
         t1_new = el_payment_obj.t1_new
         t1_prev = el_payment_obj.t1_prev
         t1_cons = el_payment_obj.t1_cons
-        t1_rate = rate_obj.t1_rate
         t1_amount = el_payment_obj.t1_amount
+        t1_rate = t1_amount / t1_cons
         sum_tot = el_payment_obj.sum_tot
         purpose = "Членские взносы за э/энергию, однотарифный/{}-{}/{},\
             {}x{}/{}. Итого/{}." 
@@ -320,10 +320,10 @@ def electricity_payment_qr_code(plot_num, el_payment_obj, rate_obj):
         t2_prev = el_payment_obj.t2_prev
         t1_cons = el_payment_obj.t1_cons
         t2_cons = el_payment_obj.t2_cons
-        t1_rate = rate_obj.t1_rate
-        t2_rate = rate_obj.t2_rate
         t1_amount = el_payment_obj.t1_amount
         t2_amount = el_payment_obj.t2_amount
+        t1_rate = t1_amount / t1_cons
+        t2_rate = t2_amount / t2_cons
         sum_tot = el_payment_obj.sum_tot
         purpose = "Членские взносы за э/энергию, T1/{}-{}/{},\
             T2/{}-{}/{}, T1/{}x{}/{}, T2/{}x{}/{}. Итого/{}." 
