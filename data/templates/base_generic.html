@@ -15,13 +15,13 @@
       <div class="col-sm-2">
       {% block sidebar %}
         <ul class="sidebar-nav">
-          <li><a href="{% url 'homepage' %}">Home</a></li>
+          <li><a href="{% url 'homepage' %}">Главная</a></li>
           <li><a href="{% url 'payments' %}">Взносы</a></li>
           {% if user.is_authenticated %}
-          <li>User: {{ user.get_username }}</li>
-          <li><a href="{% url 'logout' %}?next={{request.path}}">Logout</a></li>
+            <li>Пользователь: {{ user.get_username }}</li>
+            <li><a href="{% url 'logout' %}?next={{request.path}}">Выход</a></li>
           {% else %}
-          <li><a href="{% url 'login' %}?next={{request.path}}">Login</a></li>
+          <li><a href="{% url 'login' %}?next={{request.path}}">Вход</a></li>
           {% endif %}
         </ul>
      {% endblock %}

@@ -81,7 +81,7 @@ def user_payment_details_view(request, plot_num, pk):
     rate_obj = get_rate_object_or_404_by_sub_func(el_payment_obj)
     if el_payment_obj.record_status == 'n':
         el_payment_obj.calculate_payment()
-    context = electricity_payment_qr_code(plot_num, el_payment_obj, rate_obj)
+    context = electricity_payment_qr_code(plot_num, el_payment_obj)
     return render(request, 'payment_details.html', context=context)
 
 @login_required
@@ -283,7 +283,7 @@ def user_plot_electricity_payments_view(request, plot_num):
     return render(request, 'electricity_payments.html', context=context)
 
 # Reusable functions
-def electricity_payment_qr_code(plot_num, el_payment_obj, rate_obj):
+def electricity_payment_qr_code(plot_num, el_payment_obj):
     """Function to prepare qr code and return result to view
     for rendering web page (context{}, correct(bolean))."""
     qr_text = "ST00012|Name=Садоводческое некоммерческое товаричество{}|\
@@ -382,7 +382,7 @@ def get_rate_object_by_record_date_or_404(el_payment_obj):
     intro_date is later or equal to ElectricityPayments.record_date."""
     try:
         rate_obj = Rate.objects.filter(
-            intro_date__lte=el_payment_obj.record_date,
+            intro_date__gte=el_payment_obj.record_date,
             rate_status__exact='c',
             ).latest('intro_date')
     except Rate.DoesNotExist:
@@ -396,7 +396,7 @@ def get_rate_object_by_pay_date_or_404(el_payment_obj):
     intro_date is later or equal to ElectricityPayments.pay_date."""
     try:
         rate_obj = Rate.objects.filter(
-            intro_date__lte=el_payment_obj.pay_date,
+            intro_date__gte=el_payment_obj.pay_date,
             ).latest('intro_date')
     except Rate.DoesNotExist:
         raise Http404("get_rate_object_by_pay_date_or_404():\
