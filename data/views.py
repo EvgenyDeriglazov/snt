@@ -5,7 +5,7 @@ from data.models import Snt, LandPlot, ElectricityPayments, Rate
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from data.forms import T1NewElectricityPaymentForm, T2NewElectricityPaymentForm
-from data.forms import ElectricityPaymentSetPaidForm
+from data.forms import ElectricityPaymentPayForm
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError, PermissionDenied
 import datetime
@@ -35,14 +35,14 @@ def user_payment_pay_view(request, plot_num, pk):
     check_user_or_404(request, el_payment_obj)
     context = electricity_payment_qr_code(plot_num, el_payment_obj)
     if request.method == 'POST':
-        form = ElectricityPaymentSetPaidForm(request.POST)
+        form = ElectricityPaymentPayForm(request.POST)
         if form.is_valid():
             el_payment_obj.set_paid()
             return HttpResponseRedirect(
                 reverse('plot-electricity-payments', args=[plot_num])
                 ) 
     else:
-        form = ElectricityPaymentSetPaidForm()
+        form = ElectricityPaymentPayForm()
     context['form'] = form
     return render(request, 'pay.html', context=context)
 

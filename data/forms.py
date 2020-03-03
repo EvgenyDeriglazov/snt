@@ -36,5 +36,5 @@ class T2NewElectricityPaymentForm(forms.Form):
         min_value=0
     	)
 
-class ElectricityPaymentSetPaidForm(forms.Form):
+class ElectricityPaymentPayForm(forms.Form):
     """Form to update ElectricityPayments record as paid."""
