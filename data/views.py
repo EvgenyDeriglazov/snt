@@ -45,10 +45,6 @@ def user_payment_set_paid_view(request, plot_num, pk):
         }
     return render(request, 'set_paid.html', context=context)
 
-
-
-
-
 @login_required
 def user_payments_view(request):
     """View function to display links for each payment type."""
@@ -103,7 +99,6 @@ def user_payment_details_view(request, plot_num, pk):
     electricity payment record."""
     el_payment_obj = get_electricity_payment_object_or_404(plot_num, pk)
     check_user_or_404(request, el_payment_obj)
-    rate_obj = get_rate_object_or_404_by_sub_func(el_payment_obj)
     if el_payment_obj.record_status == 'n':
         el_payment_obj.calculate_payment()
     context = electricity_payment_qr_code(plot_num, el_payment_obj)
@@ -325,53 +320,23 @@ def electricity_payment_qr_code(plot_num, el_payment_obj):
     first_name = el_payment_obj.land_plot.owner.first_name
     middle_name = el_payment_obj.land_plot.owner.middle_name
     e_counter_type = el_payment_obj.land_plot.electrical_counter.model_type
-    if e_counter_type == 'T1':
-        t1_new = el_payment_obj.t1_new
-        t1_prev = el_payment_obj.t1_prev
-        t1_cons = el_payment_obj.t1_cons
-        t1_amount = el_payment_obj.t1_amount
-        t1_rate = t1_amount / t1_cons
-        sum_tot = el_payment_obj.sum_tot
-        purpose = "Членские взносы за э/энергию, однотарифный/{}-{}/{},\
-            {}x{}/{}. Итого/{}." 
-        purpose = purpose.format(
-            t1_new, t1_prev, t1_cons, t1_cons,
-            t1_rate, t1_amount, sum_tot,
-            )
-    elif e_counter_type == 'T2':
-        t1_new = el_payment_obj.t1_new
-        t2_new = el_payment_obj.t2_new
-        t1_prev = el_payment_obj.t1_prev
-        t2_prev = el_payment_obj.t2_prev
-        t1_cons = el_payment_obj.t1_cons
-        t2_cons = el_payment_obj.t2_cons
-        t1_amount = el_payment_obj.t1_amount
-        t2_amount = el_payment_obj.t2_amount
-        t1_rate = t1_amount / t1_cons
-        t2_rate = t2_amount / t2_cons
-        sum_tot = el_payment_obj.sum_tot
-        purpose = "Членские взносы за э/энергию, T1/{}-{}/{},\
-            T2/{}-{}/{}, T1/{}x{}/{}, T2/{}x{}/{}. Итого/{}." 
-        purpose = purpose.format(
-            t1_new, t1_prev, t1_cons, t2_new, t2_prev, t2_cons, t1_cons,
-            t1_rate, t1_amount, t2_cons, t2_rate, t2_amount, sum_tot,
-            )
-        payer_address = "участок №{}, СНТ {}".format(plot_num, name)   
-        sum_tot = el_payment_obj.sum_tot * 100
-        qr_text = qr_text.format(
-            name, p_acc, b_name, bic, cor_acc,inn, last_name, first_name,
-            middle_name, purpose, payer_address, sum_tot,
-            )
-        context = {
-            'snt_name': snt_name,
-            'el_payment_obj': el_payment_obj,
-            'qr_text': qr_text,
-            'payer_address': payer_address,
-            'purpose': purpose,
-            'last_name': last_name,
-            'first_name': first_name,
-            'middle_name': middle_name,
-            }
+    purpose = get_payment_purpose(el_payment_obj)
+    payer_address = "участок №{}, СНТ {}".format(plot_num, name)   
+    sum_tot = el_payment_obj.sum_tot * 100
+    qr_text = qr_text.format(
+        name, p_acc, b_name, bic, cor_acc,inn, last_name, first_name,
+        middle_name, purpose, payer_address, sum_tot,
+        )
+    context = {
+        'snt_name': snt_name,
+        'el_payment_obj': el_payment_obj,
+        'qr_text': qr_text,
+        'payer_address': payer_address,
+        'purpose': purpose,
+        'last_name': last_name,
+        'first_name': first_name,
+        'middle_name': middle_name,
+        }
     return context
 
 def get_electricity_payment_object_or_404(plot_num, pk):
@@ -407,7 +372,7 @@ def get_rate_object_by_record_date_or_404(el_payment_obj):
     intro_date is later or equal to ElectricityPayments.record_date."""
     try:
         rate_obj = Rate.objects.filter(
-            intro_date__gte=el_payment_obj.record_date,
+            intro_date__lte=el_payment_obj.record_date,
             rate_status__exact='c',
             ).latest('intro_date')
     except Rate.DoesNotExist:
@@ -421,7 +386,7 @@ def get_rate_object_by_pay_date_or_404(el_payment_obj):
     intro_date is later or equal to ElectricityPayments.pay_date."""
     try:
         rate_obj = Rate.objects.filter(
-            intro_date__gte=el_payment_obj.pay_date,
+            intro_date__lte=el_payment_obj.pay_date,
             ).latest('intro_date')
     except Rate.DoesNotExist:
         raise Http404("get_rate_object_by_pay_date_or_404():\
@@ -435,3 +400,48 @@ def check_user_or_404(request, el_payment_obj):
     if el_payment_obj.land_plot.user != request.user:
         raise Http404("check_user_or_404():\
         el_payment_obj does not belong to request.user") 
+
+def get_paycheck(el_payment_obj):
+    """Function takes ElectricityPayment object as positional argument
+    and returns context with paycheck data for page rendering. """
+    pass
+
+def get_payment_purpose(el_payment_obj):
+    """Function takes ElectricityPayments object as positional argument
+    and returns payment purpose string."""
+    e_counter_type = el_payment_obj.land_plot.electrical_counter.model_type
+    if el_payment_obj.record_status != 'i' and e_counter_type == 'T1':
+        t1_new = el_payment_obj.t1_new
+        t1_prev = el_payment_obj.t1_prev
+        t1_cons = el_payment_obj.t1_cons
+        t1_amount = el_payment_obj.t1_amount
+        t1_rate = t1_amount / t1_cons
+        sum_tot = el_payment_obj.sum_tot
+        purpose = "Членские взносы за э/энергию, однотарифный/{}-{}/{},\
+            {}x{}/{}. Итого/{}." 
+        purpose = purpose.format(
+            t1_new, t1_prev, t1_cons, t1_cons,
+            t1_rate, t1_amount, sum_tot,
+            )
+    elif el_payment_obj.record_status != 'i' and e_counter_type == 'T2':
+        t1_new = el_payment_obj.t1_new
+        t2_new = el_payment_obj.t2_new
+        t1_prev = el_payment_obj.t1_prev
+        t2_prev = el_payment_obj.t2_prev
+        t1_cons = el_payment_obj.t1_cons
+        t2_cons = el_payment_obj.t2_cons
+        t1_amount = el_payment_obj.t1_amount
+        t2_amount = el_payment_obj.t2_amount
+        t1_rate = t1_amount / t1_cons
+        t2_rate = t2_amount / t2_cons
+        sum_tot = el_payment_obj.sum_tot
+        purpose = "Членские взносы за э/энергию, T1/{}-{}/{},\
+            T2/{}-{}/{}, T1/{}x{}/{}, T2/{}x{}/{}. Итого/{}." 
+        purpose = purpose.format(
+            t1_new, t1_prev, t1_cons, t2_new, t2_prev, t2_cons, t1_cons,
+            t1_rate, t1_amount, t2_cons, t2_rate, t2_amount, sum_tot,
+            )
+    elif el_payment_obj.record_status == 'i':
+        purpose = "Не используется для оплаты."
+    return purpose
+ 
