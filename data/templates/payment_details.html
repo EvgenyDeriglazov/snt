@@ -1,29 +1,30 @@
 {% extends "base_generic.html" %}
 {% load qr_code %}
 {% block content %}
-		<p>СНТ {{ snt_name }}.</p>     
-        {% if el_payment_obj %}
-            <ul style="list-style-type:none;">
-                <li> Квитанция № {{el_payment_obj.id }} </li>
-                <li> СНТ {{ el_payment_obj.land_plot.snt }} </li>
-                <li> р\с: {{ el_payment_obj.land_plot.snt.personal_acc }} </li>
-                <li> {{ el_payment_obj.land_plot.snt.bank_name }} </li>
-                <li> БИК: {{ el_payment_obj.land_plot.snt.bic }} </li>
-                <li> корр. счет: {{ el_payment_obj.land_plot.snt.corresp_acc }} </li>
-                <li> ИНН: {{ el_payment_obj.land_plot.snt.inn }} </li>
-                <li> Плательщик: {{ last_name }} {{ first_name }} {{ middle_name }} </li>
-                <li> Адрес плательщика: {{ payer_address }} </li>
-                <li> Детали платежа: {{ purpose }} </li>
-                <li> Сумма: {{ el_payment_obj.sum_tot }} </li>
-                <li> Статус: {{ el_payment_obj.get_record_status_display }} </li>
-                {% if el_payment_obj.pay_date == None %}
-                    <li> <a href="{% url 'payment-set-paid' el_payment_obj.land_plot el_payment_obj.id %}"> Оплатить по QR коду</a></p></li>
-                {% else %}
-                    <li> Дата оплаты: {{ el_payment_obj.pay_date }}</li>
-        	        {% qr_from_text qr_text size="T" image_format="png" %}
-                {% endif %}
-            </ul>
-        {% else %}
-        	<p> Запись отсутсвтует или недоступна. </p>
-        {% endif %}
+	<p>СНТ "{{ snt_name }}"</p>     
+    {% if el_payment_obj %}
+        <ul style="list-style-type:none;">
+            <li> Запись № {{el_payment_obj.id }} </li>
+            <li> СНТ {{ el_payment_obj.land_plot.snt }} </li>
+            <li> р\с: {{ el_payment_obj.land_plot.snt.personal_acc }} </li>
+            <li> {{ el_payment_obj.land_plot.snt.bank_name }} </li>
+            <li> БИК: {{ el_payment_obj.land_plot.snt.bic }} </li>
+            <li> корр. счет: {{ el_payment_obj.land_plot.snt.corresp_acc }} </li>
+            <li> ИНН: {{ el_payment_obj.land_plot.snt.inn }} </li>
+            <li> Плательщик: {{ last_name }} {{ first_name }} {{ middle_name }} </li>
+            <li> Адрес плательщика: {{ payer_address }} </li>
+            <li> Детали платежа: {{ purpose }} </li>
+            <li> Сумма: {{ el_payment_obj.sum_tot }} </li>
+            <li> Статус: {{ el_payment_obj.get_record_status_display }} </li>
+            {% if el_payment_obj.pay_date == None %}
+                <li> <a href="{% url 'payment-pay' el_payment_obj.land_plot el_payment_obj.id %}"> 
+                Оплатить по QR коду</a></p></li>
+            {% elif el_payment_obj.pay_date != None and el_payment_obj.record_status != 'i' %}
+                <li> Дата оплаты: {{ el_payment_obj.pay_date }}</li>
+    	        {% qr_from_text qr_text size="T" image_format="png" %}
+            {% endif %}
+        </ul>
+    {% else %}
+    	<p> Запись отсутсвтует или недоступна. </p>
+    {% endif %}
 {% endblock %}

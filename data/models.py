@@ -54,7 +54,7 @@ class Snt(models.Model):
     """Model representing a SNT with basic information such as
     SNT name, chairman, payment details, address."""
     name = models.CharField(
-        "Наименование СНТ",
+        "Название СНТ",
         max_length=200,
         help_text="Полное название СНТ",
     )

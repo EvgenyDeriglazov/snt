@@ -13,11 +13,13 @@ import datetime
 # Create your views here.
 def homepage(request):
     """View function to display site home page"""
+    snt = Snt.objects.get(id=1)
     num_snt = Snt.objects.all().count
     num_land_plots = LandPlot.objects.all().count
     num_users = User.objects.filter(groups__name__exact='Users').count()
     
     context = {
+        'snt': snt,
         'num_snt': num_snt,
         'num_land_plots': num_land_plots,
         'num_users': num_users,
@@ -26,11 +28,12 @@ def homepage(request):
     return render(request, 'index.html', context=context)
 
 @login_required
-def user_payment_set_paid_view(request, plot_num, pk):
+def user_payment_pay_view(request, plot_num, pk):
     """View function to display form for setting ElectricityPayments
     record as paid.""" 
     el_payment_obj = get_electricity_payment_object_or_404(plot_num, pk)
     check_user_or_404(request, el_payment_obj)
+    context = electricity_payment_qr_code(plot_num, el_payment_obj)
     if request.method == 'POST':
         form = ElectricityPaymentSetPaidForm(request.POST)
         if form.is_valid():
@@ -40,10 +43,8 @@ def user_payment_set_paid_view(request, plot_num, pk):
                 ) 
     else:
         form = ElectricityPaymentSetPaidForm()
-    context = {
-        'form': form,
-        }
-    return render(request, 'set_paid.html', context=context)
+    context['form'] = form
+    return render(request, 'pay.html', context=context)
 
 @login_required
 def user_payments_view(request):
@@ -306,7 +307,7 @@ def user_plot_electricity_payments_view(request, plot_num):
 def electricity_payment_qr_code(plot_num, el_payment_obj):
     """Function to prepare qr code and return result to view
     for rendering web page (context{}, correct(bolean))."""
-    qr_text = "ST00012|Name=Садоводческое некоммерческое товаричество{}|\
+    qr_text = "ST00012|Name=Садоводческое некоммерческое товаричество \"{}\"|\
         PersonalAcc={}|BankName={}|BIC={}|CorrespAcc={}|INN={}|LastName={}|\
         FirstName={}|MiddleName={}|Purpose={}|PayerAddress={}|Sum={}"
     snt_name = el_payment_obj.land_plot.snt
@@ -408,7 +409,7 @@ def get_paycheck(el_payment_obj):
 
 def get_payment_purpose(el_payment_obj):
     """Function takes ElectricityPayments object as positional argument
-    and returns payment purpose string."""
+    and returns payment purpose string for generating qr-code."""
     e_counter_type = el_payment_obj.land_plot.electrical_counter.model_type
     if el_payment_obj.record_status != 'i' and e_counter_type == 'T1':
         t1_new = el_payment_obj.t1_new
