@@ -639,6 +639,36 @@ class ElectricityPayments(models.Model):
         else:
             return False
 
+    def check_t1_t2_or_validation_error(self, all_obj):
+        """Function takes query set of all ElectricityPayments
+        objects which belong to specific land plot as positional
+        argument. t1_new and t2_new fields of new record should be
+        bigger than t1_new and t2_new fields of latest record with
+        record_status = 'c' in db."""
+        latest_c_record = all_obj.filter(
+            record_status__exact='c'
+            ).latest('record_date')
+        el_counter_type = self.land_plot.electrical_counter.model_type
+        if el_counter_type == 'T1':
+            if self.t1_new <= latest_c_record.t1_new:
+                error = "Новые показания не должны быть равны\
+                    или меньше предыдущих."
+                error += "\nПоследние данные: Т1 {}.".format(
+                    latest_c_record.t1_new
+                    )
+                raise ValidationError(_(error))
+        elif el_counter_type == 'T2':
+            if self.t1_new <= latest_c_record.t1_new or \
+                self.t2_new <= latest_c_record.t2_new:
+                error = "Новые показания не должны быть равны\
+                    или меньше предыдущих."
+                error += "\nПоследние данные: Т1 {}, Т2 {}.".format(
+                    latest_c_record.t1_new,
+                    latest_c_record.t2_new,
+                    )
+                raise ValidationError(_(error)) 
+
+
     def save(self, *args, **kwargs):
         all_obj = ElectricityPayments.objects.filter(
             land_plot__exact=self.land_plot,
@@ -646,6 +676,7 @@ class ElectricityPayments(models.Model):
         n_records = all_obj.filter(record_status__exact='n')
         p_records = all_obj.filter(record_status__exact='p')
         modify = kwargs.pop('modify', False)
+        self.check_t1_t2_or_validation_error(all_obj)
         # Check if user try to add n-record while n or p records exist in db
         if self.record_status == 'n' and not modify and\
             (len(n_records) > 0 or len(p_records) > 0):
