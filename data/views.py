@@ -54,7 +54,7 @@ def user_payments_view(request):
     context = {
         'snt_name': snt_name,
         }
-    return render(request, 'user_payments.html', context=context)
+    return render(request, 'all_payments.html', context=context)
 
 @login_required
 def user_payment_edit_view(request, pk):
