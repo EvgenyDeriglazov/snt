@@ -285,11 +285,30 @@ class ElectricalCounter(models.Model):
         help_text="Тип прибора учета",
     )
     acceptance_date = models.DateField(
-        verbose_name="дата установки",
-        blank=True,
-        null=True,
+        verbose_name="дата установки/приемки",
     )
-
+    t1 = models.PositiveIntegerField(
+        "Показание при установке/приемке (день)",
+        help_text="Тариф Т1 (6:00-23:00)",
+        null=True,
+        blank=True,
+        default=None,
+    )
+    t2 = models.PositiveIntegerField(
+        "Показание при установке/приемке (ночь)",
+        help_text="Тариф Т2 (23:00-6:00)",
+        null=True,
+        blank=True,
+        default=None,
+    )
+    t_single = models.PositiveIntegerField(
+        "Показание при установке/приемке",
+        help_text="Однотарифный",
+        null=True,
+        blank=True,
+        default=None,
+    )
+ 
     class Meta:
         verbose_name = "прибор учета электроэнергии"
         verbose_name_plural = "приборы учета электроэнергии"
