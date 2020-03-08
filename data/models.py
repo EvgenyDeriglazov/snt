@@ -284,7 +284,7 @@ class ElectricalCounter(models.Model):
         default='T1',
         help_text="Тип прибора учета",
     )
-    acceptance_date = models.DateField(
+    intro_date = models.DateField(
         verbose_name="дата установки/приемки",
     )
     t1 = models.PositiveIntegerField(
@@ -322,8 +322,7 @@ class ElectricalCounter(models.Model):
         return reverse('electric-counter-detail', args=[str(self.id)])
 
 class ElectricityPayments(models.Model):
-    """Model representing electic counter readings to keep records and
-    calculate payment for each land plot."""
+    """Model represents electricity payment detials."""
     land_plot = models.ForeignKey(
         LandPlot,
         on_delete=models.SET_NULL,
@@ -337,13 +336,31 @@ class ElectricityPayments(models.Model):
         verbose_name="Дата",
         help_text="Дата снятия показаний счетчика",
     )
+    counter_number = models.CharField(
+        "Номер счетчика",
+        max_length=50,
+        help_text="Серийный номер прибора учета электроэнергии",
+        null=True,
+        blank=True,
+        default=None,
+    )
     t1_new = models.PositiveIntegerField(
         "Текущее показание (день)",
         help_text="Тариф Т1 (6:00-23:00)",
+        null=True,
+        blank=True,
+        default=None,
     )
     t2_new = models.PositiveIntegerField(
         "Текущее показание (ночь)",
         help_text="Тариф Т2 (23:00-6:00)",
+        null=True,
+        blank=True,
+        default=None,
+    )
+    t_single_new = models.PositiveIntegerField(
+        "Текущее показание",
+        help_text="Однотарифный",
         null=True,
         blank=True,
         default=None,
@@ -362,32 +379,45 @@ class ElectricityPayments(models.Model):
         blank=True,
         default=None,
     )
+    t_single_prev = models.PositiveIntegerField(
+        "Предыдущее показание",
+        help_text="Однотарифный",
+        null=True,
+        blank=True,
+        default=None,
+    )
     t1_cons = models.PositiveIntegerField(
         "Потрачено квт/ч (день)",
+        help_text="Тариф Т1 (6:00-23:00)",
         null=True,
         blank=True,
         default=None,
     )
     t2_cons = models.PositiveIntegerField(
         "Потрачено квт/ч (ночь)",
+        help_text="Тариф Т2 (23:00-6:00)",
         null=True,
         blank=True,
         default=None,
     )
-
+    t_single_cons = models.PositiveIntegerField(
+        "Потрачено квт/ч",
+        help_text="Однотарифный",
+        null=True,
+        blank=True,
+        default=None,
+    )
     RECORD_STATUS = [
         ('n', 'Новые показания'),
         ('p', 'Оплачено'),
         ('c', 'Оплата подтверждена'),
-        ('i', 'Первые показания'),
     ] 
-
     record_status = models.CharField(
         "Статус",
         max_length=1,
         choices=RECORD_STATUS,
         default='n',
-        help_text="Статус показаний",
+        help_text="Статус квитанции",
     )
     pay_date = models.DateField(
         verbose_name = "Дата оплаты",
@@ -406,6 +436,15 @@ class ElectricityPayments(models.Model):
     t2_amount = models.DecimalField(
         "Сумма (ночь)",
         help_text="Сумма по тарифу Т2",
+        null=True,
+        blank=True,
+        default=None,
+        max_digits=7,
+        decimal_places=2,
+    )
+    t_single_amount = models.DecimalField(
+        "Сумма",
+        help_text="Сумма (однотарифный)",
         null=True,
         blank=True,
         default=None,
