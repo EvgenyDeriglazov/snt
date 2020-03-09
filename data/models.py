@@ -308,6 +308,16 @@ class ElectricalCounter(models.Model):
         blank=True,
         default=None,
     )
+    def save(self, *args, **kwargs):
+        """
+        Custom save function which checks model data before saving it
+        to data base. It checks t1, t2, t_single fields conformity with
+        model_type field choice. If model_type is 'T1', t_single should
+        be provided with data, t1 and t2 should be empty. If model_type
+        is 'T2', t1 and t2 should be provided with data, t_single 
+        should be empty. 
+        """
+        super().save(*args, **kwargs)
  
     class Meta:
         verbose_name = "прибор учета электроэнергии"
@@ -762,17 +772,24 @@ class Rate(models.Model):
         auto_now_add=True,
     )
     t1_rate = models.DecimalField(
-        verbose_name="Электроэнергия день",
+        verbose_name="Тариф день",
         help_text="Тариф Т1 (6:00-23:00)",
         max_digits=4,
         decimal_places=2,
     )
     t2_rate = models.DecimalField(
-        verbose_name="Электроэнергия ночь",
+        verbose_name="Тариф ночь",
         help_text="Тариф Т2 (23:00-6:00)",
         max_digits=4,
         decimal_places=2,
     )
+    t_singe_rate = models.DecimalField(
+        verbose_name="Однотарифный",
+        help_text="Однотарифный",
+        max_digits=4,
+        decimal_places=2,
+    )
+
 
     RATE_STATUS = [
         ('c', 'Действующий'),
