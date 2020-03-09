@@ -308,6 +308,35 @@ class ElectricalCounter(models.Model):
         blank=True,
         default=None,
     )
+
+    # Model functions
+    def check_t1_model_type(self):
+        """
+        Function checks t_single field is not empty.
+        Returns "pass" or error_message.
+        """
+        if self.t_single == None:
+            error_message = "Необходимо указать данные для поля - \
+                {}".format(self._meta.get_field('t_single').help_text)
+            return error_message
+        else:
+            return "pass"
+        
+    def check_t2_model_type(self):
+        """
+        Function checks t1 and t2 fields are not empty.
+        Returns "pass" or error_message.
+        """
+        if self.t1 == None or self.t2 == None:
+            error_message = "Необходимо указать данные для полей: \
+               \n {} \n {}".format(
+                    self._meta.get_field('t1').help_text,
+                    self._meta.get_field('t2').help_text
+                    )
+            return error_message
+        else:
+            return "pass"
+
     def save(self, *args, **kwargs):
         """
         Custom save function which checks model data before saving it
@@ -315,9 +344,20 @@ class ElectricalCounter(models.Model):
         model_type field choice. If model_type is 'T1', t_single should
         be provided with data, t1 and t2 should be empty. If model_type
         is 'T2', t1 and t2 should be provided with data, t_single 
-        should be empty. 
+        should be empty. If unconformity found raises ValidationError.
         """
-        super().save(*args, **kwargs)
+        if self.model_type == 'T1':
+            result = self.check_t1_model_type()
+            self.t1 = None
+            self.t2 = None
+        elif self.model_type == 'T2':
+            result = self.check_t2_model_type()
+            self.t_single = None
+
+        if result == "pass":
+            super().save(*args, **kwargs)
+        else:
+            raise ValidationError(_(result))
  
     class Meta:
         verbose_name = "прибор учета электроэнергии"
@@ -783,13 +823,12 @@ class Rate(models.Model):
         max_digits=4,
         decimal_places=2,
     )
-    t_singe_rate = models.DecimalField(
+    t_single_rate = models.DecimalField(
         verbose_name="Однотарифный",
         help_text="Однотарифный",
         max_digits=4,
         decimal_places=2,
     )
-
 
     RATE_STATUS = [
         ('c', 'Действующий'),
