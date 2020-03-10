@@ -528,6 +528,24 @@ class ElectricityPayments(models.Model):
             })
 
     # Re-use functions for model instance basic operation functions
+    def count_n_records(self, all_obj):
+        """
+        Takes ElectricalPayments query set as positional argument and
+        returns number of n-records in it.
+        """
+        return all_obj.filter(record_status__exact='n').count()
+
+    def table_state(self):
+        """
+        Checks table state for specific land plot and returns result.
+        empty - no records. n - one n record. p - one p record.
+        c - one or many c records. nc - one n record and one or
+        many c records. pc - one p record and one or many c records.
+        """ 
+        all_obj = ElectricityPayments.objects.filter(land_plot__exact=self.land_plot)
+        if self.count_n_records(all_obj) == 1:
+            return "n"
+
     def get_i_record(self):
         """Returns row from database with record_status='i',
         initial record for particular (self.land_plot)."""
@@ -784,7 +802,7 @@ class ElectricityPayments(models.Model):
         n_records = all_obj.filter(record_status__exact='n')
         p_records = all_obj.filter(record_status__exact='p')
         modify = kwargs.pop('modify', False)
-        self.check_t1_t2_or_validation_error(all_obj)
+        #self.check_t1_t2_or_validation_error(all_obj)
         # Check if user try to add n-record while n or p records exist in db
         if self.record_status == 'n' and not modify and\
             (len(n_records) > 0 or len(p_records) > 0):

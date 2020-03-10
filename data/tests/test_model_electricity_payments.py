@@ -44,18 +44,21 @@ class ElectricityPaymentsModelTest(TestCase):
             end_owner_date=None,
         )
 
-        ElectricMeter.objects.create(
+        ElectricalCounter.objects.create(
             model="НЕВА",
             serial_number="123456789",
             model_type="T1",
-            acceptance_date=None,
+            intro_date=date.today(),
+            t_single=1,
         )
 
-        ElectricMeter.objects.create(
+        ElectricalCounter.objects.create(
             model="НЕВА-2",
             serial_number="000000000",
             model_type="T2",
-            acceptance_date=None,
+            intro_date=date.today(),
+            t1=1,
+            t2=1,
         )
 
         LandPlot.objects.create(
@@ -63,7 +66,7 @@ class ElectricityPaymentsModelTest(TestCase):
             plot_area=6000,
             snt=Snt.objects.get(id=1),
             owner=Owner.objects.get(id=1),
-            electric_meter=ElectricMeter.objects.get(id=1),
+            electrical_counter=ElectricalCounter.objects.get(id=1),
         )
 
         LandPlot.objects.create(
@@ -71,11 +74,11 @@ class ElectricityPaymentsModelTest(TestCase):
             plot_area=8000,
             snt=Snt.objects.get(id=1),
             owner=Owner.objects.get(id=1),
-            electric_meter=ElectricMeter.objects.get(id=2),
+            electrical_counter=ElectricalCounter.objects.get(id=2),
         )
 
         ElectricityPayments.objects.create(
-            plot_number=LandPlot.objects.get(id=1),
+            land_plot=LandPlot.objects.get(id=1),
             record_date=date(2020, 1, 1),
             t1_new=0,
             t2_new=0,
@@ -85,7 +88,7 @@ class ElectricityPaymentsModelTest(TestCase):
             record_date=date(2020, 1, 1))
         
         ElectricityPayments.objects.create(
-            plot_number=LandPlot.objects.get(id=2),
+            land_plot=LandPlot.objects.get(id=2),
             record_date=date(2020, 1, 1),
             t1_new=0,
             t2_new=0,
@@ -97,6 +100,7 @@ class ElectricityPaymentsModelTest(TestCase):
         Rate.objects.create(
             t1_rate=5.5,
             t2_rate=2.5,
+            t_single_rate=5.5,
         )
         
     # Test fields
@@ -306,6 +310,16 @@ class ElectricityPaymentsModelTest(TestCase):
         )
 
     # Test model class methods
+    def test_count_n_records(self):
+        """
+        Test for count_n_records(self, all_obj) function.
+        """
+        all_obj = ElectricityPayments.objects.filter(
+           land_plot__plot_number__exact="1",
+           ) 
+        result = all_obj[0].count_n_records(all_obj)
+        self.assertEquals(result, 1)
+
     def test_set_initial_function(self):
         """Test set_initial() for following states:
         (n) record in db - change record_status to 'i'
