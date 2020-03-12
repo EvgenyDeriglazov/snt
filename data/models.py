@@ -467,7 +467,7 @@ class ElectricityPayments(models.Model):
         max_length=1,
         choices=RECORD_STATUS,
         default='n',
-        help_text="Статус квитанции",
+        help_text="Статус показаний",
     )
     pay_date = models.DateField(
         verbose_name = "Дата оплаты",
@@ -527,13 +527,42 @@ class ElectricityPayments(models.Model):
             'pk': self.id,
             })
 
-    # Re-use functions for model instance basic operation functions
+    # Model business logic functions
     def count_n_records(self, all_obj):
         """
         Takes ElectricalPayments query set as positional argument and
         returns number of n-records in it.
         """
-        return all_obj.filter(record_status__exact='n').count()
+        result = 0
+        i = 0
+        for i in range(len(all_obj)):
+            if all_obj[i].record_status == 'n':
+                result += 1
+        return result
+
+    def count_p_records(self, all_obj):
+        """
+        Takes ElectricalPayments query set as positional argument and
+        returns number of p-records in it.
+        """
+        result = 0
+        i = 0
+        for i in range(len(all_obj)):
+            if all_obj[i].record_status == 'p':
+                result += 1
+        return result
+
+    def count_c_records(self, all_obj):
+        """
+        Takes ElectricalPayments query set as positional argument and
+        returns number of c-records in it.
+        """
+        result = 0
+        i = 0
+        for i in range(len(all_obj)):
+            if all_obj[i].record_status == 'c':
+                result += 1
+        return result
 
     def table_state(self):
         """
@@ -543,8 +572,19 @@ class ElectricityPayments(models.Model):
         many c records. pc - one p record and one or many c records.
         """ 
         all_obj = ElectricityPayments.objects.filter(land_plot__exact=self.land_plot)
-        if self.count_n_records(all_obj) == 1:
+        n_rec = self.count_n_records(all_obj)
+        p_rec = self.count_p_records(all_obj)
+        c_rec = self.count_c_records(all_obj)
+        if n_rec == 1 and len(all_obj) == 1:
             return "n"
+        elif p_rec == 1 and len(all_obj) == 1:
+            return "p"
+        elif c_rec >= 1 and len(all_obj) == c_rec:
+            return "c"
+        elif n_rec == 1 and c_rec >= 1 and len(all_obj) == (n_rec + c_rec):
+            return "nc"
+        elif p_rec == 1 and c_rec >= 1 and len(all_obj) == (p_rec + c_rec):
+            return "pc"
 
     def get_i_record(self):
         """Returns row from database with record_status='i',
