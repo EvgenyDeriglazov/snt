@@ -566,10 +566,10 @@ class ElectricityPayments(models.Model):
 
     def table_state(self):
         """
-        Checks table state for specific land plot and returns result.
-        empty - no records. n - one n record. p - one p record.
-        c - one or many c records. nc - one n record and one or
-        many c records. pc - one p record and one or many c records.
+        Checks table state of specific land plot and returns result.
+        'n' - one n record. 'p' - one p record.
+        'c' - one or many c records. 'nc' - one n record and one or
+        many c records. 'pc' - one p record and one or many c records.
         """ 
         all_obj = ElectricityPayments.objects.filter(land_plot__exact=self.land_plot)
         n_rec = self.count_n_records(all_obj)
@@ -586,32 +586,6 @@ class ElectricityPayments(models.Model):
         elif p_rec == 1 and c_rec >= 1 and len(all_obj) == (p_rec + c_rec):
             return "pc"
 
-    def get_i_record(self):
-        """Returns row from database with record_status='i',
-        initial record for particular (self.land_plot)."""
-        try:
-            i_record_obj = ElectricityPayments.objects.get(
-                Q(land_plot__exact=self.land_plot),
-                Q(record_date__lte=date.today()),
-                Q(record_status__exact='i'),
-                )
-        except:
-            return False
-        return i_record_obj
-
-    def get_n_record(self):
-        """Returns row from database with record_status='n',
-        new record for particular (self.land_plot)."""
-        try:
-            n_record_obj = ElectricityPayments.objects.get(
-                Q(land_plot__exact=self.land_plot),
-                Q(record_date__lte=date.today()),
-                Q(record_status__exact='n'),
-                )
-        except:
-            return False
-        return n_record_obj
-
     def get_p_record(self):
         """Returns row from database with record_status='p'
         (payed via bank) for self.land_plot."""
@@ -623,6 +597,8 @@ class ElectricityPayments(models.Model):
                 )
         except:
             return False
+            #error_message = "Невозможно найти ни одной оплаченной записи."
+            #raise ValidationError(_(error_message))
         return p_record_obj
 
     def get_c_record(self):
@@ -712,41 +688,6 @@ class ElectricityPayments(models.Model):
                 return False
 
     # Basic operation functions for model instances (database entities)
-    def set_initial(self):
-        """Set the status of the row (db entry) to initial 
-        (record_status = 'i')."""
-        all_obj = ElectricityPayments.objects.filter(
-            land_plot__exact=self.land_plot,
-        )
-        length = len(all_obj)
-        if (length == 1 or length == 0) and self.record_status == 'n':
-            em_model_type = self.land_plot.electrical_counter.model_type
-            if em_model_type == 'T1':
-                self.t1_prev = self.t1_new
-                self.t1_cons = 0
-                self.pay_date = date.today()
-                self.t1_amount = 0
-                self.sum_tot = 0
-                self.t2_new = None
-                self.t2_prev = None
-                self.t2_cons = None
-                self.t2_amount = None
-                self.record_status = 'i'
-                self.save()
-            elif em_model_type == 'T2':
-                self.t1_prev = self.t1_new
-                self.t2_prev = self.t2_new
-                self.t1_cons = 0
-                self.t2_cons = 0
-                self.pay_date = date.today()
-                self.t1_amount = 0
-                self.t2_amount = 0
-                self.sum_tot = 0
-                self.record_status = 'i'
-                self.save()
-        else:
-            return False
-
     def calculate_payment(self):
         """Calculates consumption of electricity and sum for payment.
         Fills relevant data in record_type='n' t1_cons, t2_cons, t1_amount

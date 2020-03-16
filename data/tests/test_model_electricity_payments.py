@@ -330,7 +330,6 @@ class ElectricityPaymentsModelTest(TestCase):
         self.assertEqual(is_dec_places, 2)
         self.assertEqual(obj.t2_amount, None)
 
-
     def test_sum_tot_field(self):
         obj = ElectricityPayments.objects.get(id=1)
         field_label = obj._meta.get_field('sum_tot').verbose_name
@@ -379,14 +378,14 @@ class ElectricityPaymentsModelTest(TestCase):
         self.assertEquals(count, 1)
 
     def test_count_p_records(self):
-        """Check count_n_record() method."""
+        """Check count_p_record() method."""
         ElectricityPayments.objects.filter(id=1).update(record_status='p')
         all_obj = ElectricityPayments.objects.filter(id=1)
         count = all_obj[0].count_p_records(all_obj)
         self.assertEquals(count, 1)
 
     def test_count_c_records(self):
-        """Check count_n_record() method."""
+        """Check count_c_record() method."""
         ElectricityPayments.objects.filter(id=1).update(record_status='c')
         all_obj = ElectricityPayments.objects.filter(id=1)
         count = all_obj[0].count_c_records(all_obj)
@@ -403,12 +402,12 @@ class ElectricityPaymentsModelTest(TestCase):
         payment = ElectricityPayments.objects.get(id=1)
         result = payment.table_state()
         self.assertEquals(result, "p")
-        # Check 'c' state
+        # Check 'c' state (one 'c' record)
         ElectricityPayments.objects.filter(id=1).update(record_status='c')
         payment = ElectricityPayments.objects.get(id=1)
         result = payment.table_state()
         self.assertEquals(result, "c")
-        # Check 'nc' state
+        # Check 'nc' state (one 'n' and one 'c' record)
         ElectricityPayments.objects.create(
             land_plot=LandPlot.objects.get(id=1),
             t_single_new=0,
@@ -416,15 +415,43 @@ class ElectricityPaymentsModelTest(TestCase):
         payment = ElectricityPayments.objects.get(id=1)
         result = payment.table_state()
         self.assertEquals(result, "nc")
-        # Check 'pc' state
+        # Check 'pc' state (one 'p' and one 'c' record)
         ElectricityPayments.objects.filter(id=3).update(record_status='p')
         payment = ElectricityPayments.objects.get(id=1)
         result = payment.table_state()
         self.assertEquals(result, "pc")
-        # Check 'c'+ state (2 c records)
+        # Check 'c'+ state (two 'c' records)
         ElectricityPayments.objects.filter(id=3).update(record_status='c')
         payment = ElectricityPayments.objects.get(id=1)
         result = payment.table_state()
         self.assertEquals(result, "c")
+        # Check 'nc+' state (two 'c' and one 'n' record)
+        ElectricityPayments.objects.create(
+            land_plot=LandPlot.objects.get(id=1),
+            t_single_new=5,
+            )
+        result = payment.table_state()
+        self.assertEquals(result, "nc")
+        # Check 'pc+' state (two 'c' and one 'p' record)
+        ElectricityPayments.objects.filter(id=4).update(record_status='p')
+        result = payment.table_state()
+        self.assertEquals(result, "pc")
+
+    def test_get_p_record(self):
+        """Check get_p_record() method."""
+        # p-record does not exist
+        payment = ElectricityPayments.objects.get(id=1)
+        result = payment.get_p_record()
+        self.assertEquals(result, False)
+        # p-record exist
+        ElectricityPayments.objects.filter(id=1).update(record_status='p')
+        payment = ElectricityPayments.objects.get(id=1)
+        result = payment.get_p_record()
+        self.assertEquals(result, payment)
+        
+
+
+ 
+ 
  
 
