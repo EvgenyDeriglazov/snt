@@ -126,6 +126,22 @@ class ElectricityPaymentsModelTest(TestCase):
         self.assertEqual(help_text, "Дата снятия показаний счетчика")
         self.assertEqual(obj.record_date, date(2020, 1, 1))
 
+    def test_counter_number_field(self):
+        obj = ElectricityPayments.objects.get(id=1)
+        field_label = obj._meta.get_field('counter_number').verbose_name
+        max_length = obj._meta.get_field('counter_number').max_length
+        help_text = obj._meta.get_field('counter_number').help_text
+        is_null = obj._meta.get_field('counter_number').null
+        is_blank = obj._meta.get_field('counter_number').blank
+        is_default = obj._meta.get_field('counter_number').default
+        self.assertEqual(field_label, "Номер счетчика")
+        self.assertEqual(max_length, 50)
+        self.assertEqual(help_text, "Серийный номер прибора учета электроэнергии")
+        self.assertEqual(is_null, True)
+        self.assertEqual(is_blank, True)
+        self.assertEqual(is_default, None)
+
+       
     def test_t1_new_field(self):
         obj = ElectricityPayments.objects.get(id=1)
         field_label = obj._meta.get_field('t1_new').verbose_name

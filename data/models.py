@@ -372,7 +372,7 @@ class ElectricalCounter(models.Model):
         return reverse('electric-counter-detail', args=[str(self.id)])
 
 class ElectricityPayments(models.Model):
-    """Model represents electricity payment detials."""
+    """Model represents electricity payment details."""
     land_plot = models.ForeignKey(
         LandPlot,
         on_delete=models.SET_NULL,
@@ -587,8 +587,10 @@ class ElectricityPayments(models.Model):
             return "pc"
 
     def get_p_record(self):
-        """Returns row from database with record_status='p'
-        (payed via bank) for self.land_plot."""
+        """
+        Returns latest record from db with record_status='p'
+         for self.land_plot.
+        """
         try:
             p_record_obj = ElectricityPayments.objects.get(
                 Q(land_plot__exact=self.land_plot),
@@ -602,8 +604,10 @@ class ElectricityPayments(models.Model):
         return p_record_obj
 
     def get_c_record(self):
-        """Returns row from database with record_status='c'
-        (last confirmed payment) for self.land_plot."""
+        """
+        Returns latest record from database with record_status='c'
+        for self.land_plot.
+        """
         try:
             c_record_obj = ElectricityPayments.objects.filter(
                 land_plot__exact=self.land_plot,
