@@ -615,6 +615,8 @@ class ElectricityPayments(models.Model):
                 ).latest('record_date')
         except:
             return False
+            #error_message = "Невозможно найти ни одной записи с подтвержденной оплатой."
+            #raise ValidationError(_(error_message))
         return c_record_obj
 
     def get_current_rate(self):

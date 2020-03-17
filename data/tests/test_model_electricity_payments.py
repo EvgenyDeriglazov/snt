@@ -459,13 +459,33 @@ class ElectricityPaymentsModelTest(TestCase):
         payment = ElectricityPayments.objects.get(id=1)
         result = payment.get_p_record()
         self.assertEquals(result, False)
-        # p-record exist
+        # p-record exists
         ElectricityPayments.objects.filter(id=1).update(record_status='p')
         payment = ElectricityPayments.objects.get(id=1)
         result = payment.get_p_record()
         self.assertEquals(result, payment)
         
-
+    def test_get_c_record(self):
+        """Check get_p_record() method."""
+        # c-record does not exist
+        payment = ElectricityPayments.objects.get(id=1)
+        result = payment.get_c_record()
+        self.assertEquals(result, False)
+        # c-record exists
+        ElectricityPayments.objects.filter(id=1).update(record_status='c')
+        payment = ElectricityPayments.objects.get(id=1)
+        result = payment.get_c_record()
+        self.assertEquals(result, payment)
+        # 2 c-records exist
+        ElectricityPayments.objects.create(
+            land_plot=LandPlot.objects.get(id=1),
+            t_single_new=5,
+            )
+        ElectricityPayments.objects.filter(id=3).update(record_status='c')
+        payment = ElectricityPayments.objects.get(id=3)
+        result = payment.get_c_record()
+        self.assertEquals(result, payment)
+ 
 
  
  
