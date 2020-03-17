@@ -620,10 +620,9 @@ class ElectricityPayments(models.Model):
         return c_record_obj
 
     def get_current_rate(self):
-        """Returns row from database (Rate model) with Rate.rate_status='c'
-        (current rate for electricity T1 and T2 payment calculation)."""
+        """Returns record from database with Rate.rate_status='c'."""
         try:
-            current_rate_obj = Rate.objects.filter(rate_status__exact='c').latest('intro_date')
+            current_rate_obj = Rate.objects.get(rate_status__exact='c')
         except:
             return False
         return current_rate_obj

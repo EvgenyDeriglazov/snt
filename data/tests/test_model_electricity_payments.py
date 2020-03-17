@@ -486,8 +486,20 @@ class ElectricityPaymentsModelTest(TestCase):
         result = payment.get_c_record()
         self.assertEquals(result, payment)
  
-
- 
- 
- 
-
+    def test_get_current_rate(self):
+        """Check get_current_rate() method."""
+        # 2 records in db. One has 'c' rate status
+        Rate.objects.create(
+            t1_rate = 10,
+            t2_rate = 15,
+            t_single_rate = 12,
+            rate_status = None,
+            )
+        payment = ElectricityPayments.objects.get(id=1)
+        rate = Rate.objects.get(id=1)
+        result = payment.get_current_rate()
+        self.assertEquals(result, rate)
+        # 2 records in db. No one has 'c' rate status
+        Rate.objects.filter(id=1).update(rate_status=None)
+        result = payment.get_current_rate()
+        self.assertEquals(result, False)
