@@ -619,6 +619,19 @@ class ElectricityPayments(models.Model):
             #raise ValidationError(_(error_message))
         return c_record_obj
 
+    def get_electrical_counter(self):
+        """Returns actual electrical counter record from database."""
+        try:
+            land_plot_obj = LandPlot.objects.get(
+                plot_number__exact=self.land_plot
+                )
+        except:
+            return False
+            #error_message = "Невозможно найти участок."
+            #raise ValidationError(_(error_message))
+        electrical_counter_obj = land_plot_obj.electrical_counter
+        return electrical_counter_obj
+
     def get_current_rate(self):
         """Returns record from database with Rate.rate_status='c'."""
         try:

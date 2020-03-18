@@ -503,3 +503,16 @@ class ElectricityPaymentsModelTest(TestCase):
         Rate.objects.filter(id=1).update(rate_status=None)
         result = payment.get_current_rate()
         self.assertEquals(result, False)
+
+    def test_get_electrical_counter(self):
+        """Check get_electrical_counter() method."""
+        # Electrical counter exists
+        payment = ElectricityPayments.objects.get(id=1)
+        el_counter = ElectricalCounter.objects.get(id=1)
+        result = payment.get_electrical_counter()
+        self.assertEquals(result, el_counter)
+        # Electrical counter does not exist
+        ElectricalCounter.objects.filter(id=1).delete()
+        payment = ElectricityPayments.objects.get(id=1)
+        result = payment.get_electrical_counter()
+        self.assertEquals(result, None)
