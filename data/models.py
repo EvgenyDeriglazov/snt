@@ -640,6 +640,110 @@ class ElectricityPayments(models.Model):
             return False
         return current_rate_obj
 
+    def state_c_t1_new_fill_calc(self, c_record, el_counter, rate):
+        """
+        Fills t1 type record and calculates payment. 
+        Takes 3 positional arguments: previous electrical
+        payment object, electrical counter object and rate object.
+        """
+        if self.t_single_new > c_record.t_single_new:
+            self.t_single_prev = c_record.t_single_new 
+            self.t_single_cons = self.t_single_new - self.t_single_prev
+            self.t_single_amount = self.t_single_cons * rate.t_single_rate
+            self.sum_tot = self.t_single_amount
+            self.counter_number = el_counter.serial_number
+            self.t1_prev = None
+            self.t2_prev = None
+            self.t1_cons = None
+            self.t2_cons = None
+            return True
+        elif self.t_single_new <= self.c_record.t_single_new: 
+            return False
+    
+    def empty_t1_new_fill_calc(self, el_counter, rate):
+        """
+        Fills t1 type record and calculates payment. 
+        Takes 2 positional arguments: electrical counter
+        object and rate object.
+        """
+        if self.t_single_new > el_counter.t_single:
+            self.t_single_prev = el_counter.t_single 
+            self.t_single_cons = self.t_single_new - self.t_single_prev
+            self.t_single_amount = self.t_single_cons * rate.t_single_rate
+            self.sum_tot = self.t_single_amount
+            self.counter_number = el_counter.serial_number
+            self.t1_prev = None
+            self.t2_prev = None
+            self.t1_cons = None
+            self.t2_cons = None
+            return True
+        elif self.t_single_new <= el_counter.t_single: 
+            return False
+    
+    def state_c_t2_new_fill_calc(self, c_record, el_counter, rate):
+        """
+        Fills t2 type record and calculates payment. 
+        Takes 3 positional arguments: previous electrical
+        payment object, electrical counter object and rate object.
+        """
+        if self.t1_new > c_record.t1_new and self.t2_new > self.c_record.t2_new:
+            self.t1_prev = c_record.t1_new 
+            self.t1_cons = self.t1_new - self.t1_prev
+            self.t1_amount = self.t1_cons * rate.t1_rate
+            self.t2_prev = c_record.t2_new 
+            self.t2_cons = self.t2_new - self.t2_prev
+            self.t2_amount = self.t2_cons * rate.t2_rate           
+            self.sum_tot = self.t1_amount + self.t2_amount
+            self.counter_number = el_counter.serial_number
+            self.t_single_prev = None
+            self.t_single_cons = None
+            return True
+        elif self.t1_new <= self.c_record.t1_new or \
+            self.t2_new <= self.c_record.t2_new: 
+            return False
+            
+    def empty_t2_new_fill_calc(self, el_counter, rate):
+        """
+        Fills t1 type record and calculates payment. 
+        Takes 2 positional arguments: electrical counter
+        object and rate object.
+        """
+        if self.t1_new > el_counter.t1 and self.t2_new > el_counter.t1:
+            self.t1_prev = el_counter.t1 
+            self.t1_cons = self.t1_new - self.t1_prev
+            self.t1_amount = self.t1_cons * rate.t1_rate
+            self.t2_prev = el_counter.t2 
+            self.t2_cons = self.t2_new - self.t2_prev
+            self.t2_amount = self.t2_cons * rate.t2_rate
+            self.sum_tot = self.t1_amount + self.t2_amount
+            self.counter_number = el_counter.serial_number
+            self.t_single_prev = None
+            self.t_single_cons = None
+            return True
+        elif self.t1_new <= el_counter.t1 or self.t2_new <= el_counter.t2: 
+            return False
+ 
+    def calc_new_record(self):
+        """Fills record with relevant data from previous payment
+        details (previous electrical counter readings)."""
+        state = self.table_state()
+        el_counter = self.get_electrical_counter()
+        if state == "c" and el_counter.model_type == 'T1':
+            c_record = self.get_c_record()
+            result = self.state_c_t1_new_fill_calc(c_record, el_counter, rate)
+            
+        elif state == "empty" and el_counter.model_type == 'T1':
+            result = self.empty_t1_new_fill_calc(el_counter, rate)
+
+        elif state == "c" and el_counter.model_type == 'T2':
+            c_record = self.get_c_record()
+            result = self.state_c_t2_new_fill_calc(c_record, el_counter, rate)
+
+        elif state == "empty" and el_counter.model_type == 'T2':
+            result = self.empty_t2_new_fill_calc(el_counter, rate)
+
+        return result
+
     def fill_n_record(self):
         """Fills record_type='n' (new record) row (columns t1_prev, t2_prev)
         with data from record_type='c' (prev record) row or
